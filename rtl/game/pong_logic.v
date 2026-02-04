@@ -60,8 +60,8 @@ module pong_logic (
         end else if (square_xpos <= paddle1_xpos + paddle_width + 1 && 
                     square_xpos + square_width >= paddle1_xpos) begin
             // If top/bottom left corner of the square is hitting the left paddle's right side
-            if (square_ypos <= paddle1_ypos + paddle_height && square_ypos >= paddle1_ypos || 
-                square_ypos + square_width - 1 <= paddle1_ypos + paddle_height && square_ypos + square_width >= paddle1_ypos) begin
+            if (square_ypos <= paddle1_ypos + paddle_height && 
+                square_ypos + square_width >= paddle1_ypos) begin
                 // Check if top of the square is hitting the bottom of the paddle
                 if (square_ypos == paddle1_ypos + paddle_height ||
                     square_ypos == paddle1_ypos + paddle_height - 1) begin
@@ -85,8 +85,8 @@ module pong_logic (
         end else if (square_xpos + square_width >= paddle2_xpos && 
                     square_xpos <= paddle2_xpos + paddle_width) begin
             // Check if the top/bottom right corner of the square hits the paddle
-            if (square_ypos <= paddle2_ypos + paddle_height && square_ypos >= paddle2_ypos || 
-                square_ypos + square_width - 1 <= paddle2_ypos + paddle_height && square_ypos + square_width >= paddle2_ypos) begin
+            if (square_ypos <= paddle2_ypos + paddle_height && 
+                square_ypos + square_width >= paddle2_ypos) begin
                 // Check if top of the square is hitting the bottom of the paddle
                 if (square_ypos == paddle2_ypos + paddle_height ||
                     square_ypos == paddle2_ypos + paddle_height - 1) begin
