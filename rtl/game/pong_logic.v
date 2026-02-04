@@ -2,19 +2,14 @@ module pong_logic (
     input clk_0,            // 25MHz clock
     input rst,              // Reset button
 
-    // The x-coordinate of the top left corner of the square
+    // Coordinates for the top left corner of each sprite
     output reg [9:0] square_xpos = h_video /2,
-    // The y-coordinate of the top left corner of the square
     output reg [9:0] square_ypos = v_video/2,
 
-    // The x-coordinate of the top left corner of paddle 1
     output reg [9:0] paddle1_xpos = 24,
-    // The y-coordinate of the top left corner of paddle 1
     output reg [9:0] paddle1_ypos = 191,
 
-    // The x-coordinate of the top left corner of paddle 2
     output reg [9:0] paddle2_xpos = 603,
-    // The y-coordinate of the top left corner of paddle 2
     output reg [9:0] paddle2_ypos = 191
     );
 
