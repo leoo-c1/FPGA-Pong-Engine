@@ -1,10 +1,10 @@
 module pong_engine_top #(
-    parameter BUTTONS = 4;  // Number of buttons to debounce
+    parameter BUTTONS = 4   // Number of buttons to debounce
 ) (
     input clk,              // 50MHz clock
     input rst,              // Reset button
 
-    input wire [BUTTONS-1:0] button     // Input user buttons
+    input wire [BUTTONS-1:0] button,    // Input user buttons
 
     output h_sync,          // Horizontal sync pulse
     output v_sync,          // Vertical sync pulse
