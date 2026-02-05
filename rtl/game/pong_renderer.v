@@ -62,6 +62,7 @@ module pong_renderer (
     wire in_score_p2_d1;            // If the current pixel is digit 1 of player 2's score
     wire in_score_p2_d2;            // If the current pixel is digit 2 of player 2's score
     wire in_startup_text;           // If the current pixel is in the startup text ('PONG...')
+    wire in_over_text;              // If the current pixel is in the game over text
 
     // Digit 1 of player 1's score
     score_display score_p1_dig1 (
@@ -112,6 +113,17 @@ module pong_renderer (
         .rst(rst),
         .pixel_x(pixel_x), .pixel_y(pixel_y),
         .in_text(in_startup_text)
+    );
+
+    /* Game over text:
+          Game over!
+    Press any key to start
+    */
+    game_over game_over_text (
+        .clk_0(clk_0),
+        .rst(rst),
+        .pixel_x(pixel_x), .pixel_y(pixel_y),
+        .in_text(in_over_text)
     );
 
     always @ (posedge clk_0) begin
@@ -233,7 +245,19 @@ module pong_renderer (
                     blue <= 1'b0;
                 end
 
-            // If we are inside a sprite, make the pixel white
+            // If we are on the game over screen
+            end else if (game_over) begin
+                if (in_over_text) begin
+                    red <= 1'b1;
+                    green <= 1'b1;
+                    blue <= 1'b1;
+                end else begin
+                    red <= 1'b0;
+                    green <= 1'b0;
+                    blue <= 1'b0;
+                end
+
+            // If we are inside a game sprite, make the pixel white
             end else if (in_paddle1 || in_paddle2 || (in_square && sq_shown) || in_net
                 || in_score_p1_d1 || in_score_p1_d2 || in_score_p2_d1 || in_score_p2_d2) begin
                 red <= 1'b1;
