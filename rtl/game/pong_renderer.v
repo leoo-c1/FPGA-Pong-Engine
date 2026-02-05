@@ -236,7 +236,8 @@ module pong_renderer (
 
         // If we are inside a sprite, make the pixel white
         if (in_paddle1 || in_paddle2 || (in_square && sq_shown) || in_net
-            || in_score_p1_d1 || in_score_p1_d2 || in_score_p2_d1 || in_score_p2_d2) begin
+            || in_score_p1_d1 || in_score_p1_d2 || in_score_p2_d1 || in_score_p2_d2
+            || in_startup_text) begin
             red <= 1'b1;
             green <= 1'b1;
             blue <= 1'b1;
