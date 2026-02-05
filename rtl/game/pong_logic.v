@@ -22,7 +22,8 @@ module pong_logic (
     output reg sq_shown = 1'b1,     // Whether or not square should be shown
     output reg [3:0] score_p1 = 0,  // Player 1's score
     output reg [3:0] score_p2 = 0,  // Player 2's score
-    output reg game_over = 1'b0     // Whether or not the game is over
+    output reg game_over = 1'b0,    // Whether or not the game is over
+    output reg game_startup = 1'b1  // Whether or not the game is on the startup menu
     );
 
     parameter h_video = 640;        // Horizontal active video (in pixels)
@@ -56,6 +57,9 @@ module pong_logic (
 
     parameter max_score = 11;               // The max score before game over
 
+    parameter safe_start_time = 2_500_000;
+    reg [21:0] safe_start_count = 0;
+
     always @ (posedge clk_0, negedge rst) begin
         if (!rst) begin        // If we reset
             // Reset the score and sprites' positions and velocities
@@ -76,6 +80,8 @@ module pong_logic (
             score_p1 <= 0;
             score_p2 <= 0;
             game_over <= 1'b0;
+            game_startup <= 1'b1;
+            safe_start_count <= 0;
         end else if (game_over) begin   // If the game is over
             // Reset the score and sprites' positions and velocities
             sq_xpos <= h_video /2;
@@ -95,6 +101,38 @@ module pong_logic (
             score_p1 <= 0;
             score_p2 <= 0;
             game_over <= 1'b0;
+            game_startup <= 1'b1;
+            safe_start_count <= 0;
+        end else if (game_startup) begin    // If we're on the startup menu
+            // Reset the score and sprites' positions and velocities
+            sq_xpos <= h_video /2;
+            sq_ypos <= v_video /2;
+            sq_vel_count <= 0;
+            pdl1_vel_count <= 0;
+            pdl2_vel_count <= 0;
+            sq_xvel <= 1'b0;
+            sq_yvel <= 1'b0;
+            pdl1_xpos <= 24;
+            pdl1_ypos <= 191;
+            pdl2_xpos <= 603;
+            pdl2_ypos <= 191;
+            sq_shown <= 1'b0;
+            sq_missed <= 1'b1;
+            delay_count <= 0;
+            score_p1 <= 0;
+            score_p2 <= 0;
+            game_over <= 1'b0;
+            game_startup <= 1'b1;
+            // Stay in start up until user presses buttons (after safety delay passes)
+            if (safe_start_count < 22'd2_500_000) begin
+                safe_start_count <= safe_start_count + 1;
+                game_startup <= 1'b1;
+            // Only check buttons if the timer is finished
+            end else begin 
+                    if (!up_p1 || !down_p1 || !up_p2 || !down_p2) begin
+                    game_startup <= 1'b0;
+                    end
+            end
         end else begin
             // Square collision with right wall
             if (sq_xpos >= h_video - sq_width - 1) begin // Reset game state
