@@ -1,5 +1,5 @@
 module pong_renderer (
-    input clk_0,            // 25MHz clock
+    input clk_0,            // 25.175MHz clock
     input rst,              // Reset button
 
     input [9:0] pixel_x,    // Horizontal position of pixel
@@ -19,6 +19,10 @@ module pong_renderer (
     // Game states
     input wire sq_shown,    // Whether the square should be shown or not
 
+    input wire [3:0] score_p1,  // Player 1's score
+    input wire [3:0] score_p2,  // Player 2's score
+    input wire game_over,   // Whether or not the game is over
+
     output reg red,         // Red colour (either 0v or 0.7v)
     output reg green,       // Green colour (either 0v or 0.7v)
     output reg blue         // Blue colour (either 0v or 0.7v)
@@ -32,14 +36,78 @@ module pong_renderer (
     parameter paddle_height = 96;   // The height of the paddle
     parameter net_width = 12;       // The side lengths of the net squares
 
-    reg [4:0] net_counter = 0;
+    parameter score_p1_d1x = 262;   // x-coordinate for top left of digit 1 of player 1's score
+    parameter score_p1_d2x = 220;   // x-coordinate for top left of digit 2 of player 1's score
 
-    // Future reference: Net is alternating black and white squares (size 12, offset from top = 6)  
+    parameter score_p2_d1x = 388;   // x-coordinate for top left of digit 1 of player 2's score
+    parameter score_p2_d2x = 346;   // x-coordinate for top left of digit 2 of player 2's score
+
+    parameter score_ypos = 28;      // y-coordinate for top left both scores' digits
+
+    reg [3:0] score_p1_d1 = 0;      // Digit 1 of player 1's score
+    reg [3:0] score_p1_d2 = 0;      // Digit 2 of player 1's score
+
+    reg [3:0] score_p2_d1 = 0;      // Digit 1 of player 2's score
+    reg [3:0] score_p2_d2 = 0;      // Digit 2 of player 2's score
+
+    reg [4:0] net_counter = 0; 
 
     reg in_square = 1'b0;           // If current pixel is inside the square
     reg in_paddle1 = 1'b0;          // If current pixel is inside paddle1
     reg in_paddle2 = 1'b0;          // If current pixel is inside paddle2
     reg in_net = 1'b0;              // If current pixel is inside the net
+    wire in_score_p1_d1;            // If the current pixel is digit 1 of player 1's score
+    wire in_score_p1_d2;            // If the current pixel is digit 2 of player 1's score
+    wire in_score_p2_d1;            // If the current pixel is digit 1 of player 2's score
+    wire in_score_p2_d2;            // If the current pixel is digit 2 of player 2's score
+
+    // Digit 1 of player 1's score
+    score_display score_p1_dig1 (
+        .clk_0(clk_0),
+        .rst(rst),
+        .pixel_x(pixel_x),
+        .pixel_y(pixel_y),
+        .x_pos(score_p1_d1x),
+        .y_pos(score_ypos),
+        .number(score_p1_d1),
+        .pixel_on(in_score_p1_d1)
+    );
+
+    // Digit 2 of player 1's score
+    score_display score_p1_dig2 (
+        .clk_0(clk_0),
+        .rst(rst),
+        .pixel_x(pixel_x),
+        .pixel_y(pixel_y),
+        .x_pos(score_p1_d2x),
+        .y_pos(score_ypos),
+        .number(score_p1_d2),
+        .pixel_on(in_score_p1_d2)
+    );
+
+    // Digit 1 of player 2's score
+    score_display score_p2_dig1 (
+        .clk_0(clk_0),
+        .rst(rst),
+        .pixel_x(pixel_x),
+        .pixel_y(pixel_y),
+        .x_pos(score_p2_d1x),
+        .y_pos(score_ypos),
+        .number(score_p2_d1),
+        .pixel_on(in_score_p2_d1)
+    );
+
+    // Digit 2 of player 2's score
+    score_display score_p2_dig2 (
+        .clk_0(clk_0),
+        .rst(rst),
+        .pixel_x(pixel_x),
+        .pixel_y(pixel_y),
+        .x_pos(score_p2_d2x),
+        .y_pos(score_ypos),
+        .number(score_p2_d2),
+        .pixel_on(in_score_p2_d2)
+    );
 
     always @ (posedge clk_0) begin
         if (!rst) begin             // If we press the reset button, show black
@@ -118,6 +186,36 @@ module pong_renderer (
                 in_net <= 1'b0;
             end
 
+            // Handle assigning digits of player 1's score
+            if (score_p1 <= 9) begin
+                score_p1_d1 <= score_p1;
+                score_p1_d2 <= 0;
+            end else if (score_p1 == 10) begin
+                score_p1_d1 <= 0;
+                score_p1_d2 <= 1;
+            end else if (score_p1 == 11) begin
+                score_p1_d1 <= 1;
+                score_p1_d2 <= 1;
+            end else begin
+                score_p1_d1 <= 0;
+                score_p1_d2 <= 0;
+            end
+
+            // Handle assigning digits of player 2's score
+            if (score_p2 <= 9) begin
+                score_p2_d1 <= score_p2;
+                score_p2_d2 <= 0;
+            end else if (score_p2 == 10) begin
+                score_p2_d1 <= 0;
+                score_p2_d2 <= 1;
+            end else if (score_p2 == 11) begin
+                score_p2_d1 <= 1;
+                score_p2_d2 <= 1;
+            end else begin
+                score_p2_d1 <= 0;
+                score_p2_d2 <= 0;
+            end
+
         end else begin          // If we are outside the active video region, show black
             red <= 1'b0;
             green <= 1'b0;
@@ -125,7 +223,8 @@ module pong_renderer (
         end
 
         // If we are inside a sprite, make the pixel white
-        if (in_paddle1 || in_paddle2 || (in_square && sq_shown) || in_net) begin
+        if (in_paddle1 || in_paddle2 || (in_square && sq_shown) || in_net
+            || in_score_p1_d1 || in_score_p1_d2 || in_score_p2_d1 || in_score_p2_d2) begin
             red <= 1'b1;
             green <= 1'b1;
             blue <= 1'b1;
