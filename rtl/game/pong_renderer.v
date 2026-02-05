@@ -66,10 +66,8 @@ module pong_renderer (
     score_display score_p1_dig1 (
         .clk_0(clk_0),
         .rst(rst),
-        .pixel_x(pixel_x),
-        .pixel_y(pixel_y),
-        .x_pos(score_p1_d1x),
-        .y_pos(score_ypos),
+        .pixel_x(pixel_x), .pixel_y(pixel_y),
+        .x_pos(score_p1_d1x), .y_pos(score_ypos),
         .number(score_p1_d1),
         .pixel_on(in_score_p1_d1)
     );
@@ -78,10 +76,8 @@ module pong_renderer (
     score_display score_p1_dig2 (
         .clk_0(clk_0),
         .rst(rst),
-        .pixel_x(pixel_x),
-        .pixel_y(pixel_y),
-        .x_pos(score_p1_d2x),
-        .y_pos(score_ypos),
+        .pixel_x(pixel_x), .pixel_y(pixel_y),
+        .x_pos(score_p1_d2x), .y_pos(score_ypos),
         .number(score_p1_d2),
         .pixel_on(in_score_p1_d2)
     );
@@ -90,10 +86,8 @@ module pong_renderer (
     score_display score_p2_dig1 (
         .clk_0(clk_0),
         .rst(rst),
-        .pixel_x(pixel_x),
-        .pixel_y(pixel_y),
-        .x_pos(score_p2_d1x),
-        .y_pos(score_ypos),
+        .pixel_x(pixel_x), .pixel_y(pixel_y),
+        .x_pos(score_p2_d1x), .y_pos(score_ypos),
         .number(score_p2_d1),
         .pixel_on(in_score_p2_d1)
     );
@@ -102,10 +96,8 @@ module pong_renderer (
     score_display score_p2_dig2 (
         .clk_0(clk_0),
         .rst(rst),
-        .pixel_x(pixel_x),
-        .pixel_y(pixel_y),
-        .x_pos(score_p2_d2x),
-        .y_pos(score_ypos),
+        .pixel_x(pixel_x), .pixel_y(pixel_y),
+        .x_pos(score_p2_d2x), .y_pos(score_ypos),
         .number(score_p2_d2),
         .pixel_on(in_score_p2_d2)
     );
