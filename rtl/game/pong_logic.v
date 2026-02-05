@@ -20,6 +20,9 @@ module pong_logic (
 
     // Game logic
     output reg sq_shown = 1'b1      // Whether or not square should be shown
+    output reg [3:0] score_p1 = 0;  // Player 1's score
+    output reg [3:0] score_p2 = 0;  // Player 2's score
+    output reg game_over = 1'b0;    // Whether or not the game is over
     );
 
     parameter h_video = 640;        // Horizontal active video (in pixels)
@@ -46,12 +49,15 @@ module pong_logic (
 
     // Game states
     reg sq_missed = 1'b1;           // If the we miss the square and it hits the left/right side
+
     parameter delay_s = 2;                  // Delay on startup/point won/lost (seconds)
     parameter delay = 25_176_056*delay_s;   // Same delay in 25.175MHz clock cycles
     reg [26:0] delay_count = 0;             // Counts delay time
 
+    parameter max_score = 11;               // The max score before game over
+
     always @ (posedge clk_0, negedge rst) begin
-        if (!rst) begin             // If we press the reset button
+        if (!rst || game_over) begin        // If we reset or the game is over
             // Reset the score and sprites' positions and velocities
             sq_xpos <= h_video /2;
             sq_ypos <= v_video /2;
@@ -67,6 +73,9 @@ module pong_logic (
             sq_shown <= 1'b0;
             sq_missed <= 1'b1;
             delay_count <= 0;
+            score_p1 <= 0;
+            score_p2 <= 0;
+            game_over <= 1'b0;
         end else begin
             // Square collision with right wall
             if (sq_xpos >= h_video - sq_width - 1) begin // Reset game state
@@ -76,6 +85,12 @@ module pong_logic (
                 sq_vel_count <= 0;
                 sq_xvel <= 1'b0;
                 sq_yvel <= 1'b0;
+                if (score_p1 < max_score) begin
+                    score_p1 <= score_p1 + 1;
+                    game_over <= 1'b0;
+                end else begin
+                    game_over <= 1'b1;
+                end
 
             // Square collision with left wall
             end else if (sq_xpos <= 0) begin
@@ -85,6 +100,12 @@ module pong_logic (
                 sq_vel_count <= 0;
                 sq_xvel <= 1'b0;
                 sq_yvel <= 1'b0;
+                if (score_p2 < max_score) begin
+                    score_p2 <= score_p2 + 1;
+                    game_over <= 1'b0;
+                end else begin
+                    game_over <= 1'b1;
+                end
             
             // Square collision with left paddle
             end else if (sq_xpos <= pdl1_xpos + pdl_width + 1 && 
