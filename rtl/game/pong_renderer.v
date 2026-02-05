@@ -21,7 +21,8 @@ module pong_renderer (
 
     input wire [3:0] score_p1,  // Player 1's score
     input wire [3:0] score_p2,  // Player 2's score
-    input wire game_over,   // Whether or not the game is over
+    input wire game_over,       // Whether or not the game is over
+    input wire game_startup,    // Whether or not we are on the startup menu
 
     output reg red,         // Red colour (either 0v or 0.7v)
     output reg green,       // Green colour (either 0v or 0.7v)
@@ -50,7 +51,7 @@ module pong_renderer (
     reg [3:0] score_p2_d1 = 0;      // Digit 1 of player 2's score
     reg [3:0] score_p2_d2 = 0;      // Digit 2 of player 2's score
 
-    reg [4:0] net_counter = 0; 
+    reg [4:0] net_counter = 0;
 
     reg in_square = 1'b0;           // If current pixel is inside the square
     reg in_paddle1 = 1'b0;          // If current pixel is inside paddle1
@@ -220,21 +221,32 @@ module pong_renderer (
                 score_p2_d2 <= 0;
             end
 
-        end else begin          // If we are outside the active video region, show black
-            red <= 1'b0;
-            green <= 1'b0;
-            blue <= 1'b0;
-        end
+            // If we are on the startup menu
+            if (game_startup) begin
+                if (in_startup_text) begin
+                    red <= 1'b1;
+                    green <= 1'b1;
+                    blue <= 1'b1;
+                end else begin
+                    red <= 1'b0;
+                    green <= 1'b0;
+                    blue <= 1'b0;
+                end
 
-        // If we are inside a sprite, make the pixel white
-        if (in_paddle1 || in_paddle2 || (in_square && sq_shown) || in_net
-            || in_score_p1_d1 || in_score_p1_d2 || in_score_p2_d1 || in_score_p2_d2
-            || in_startup_text) begin
-            red <= 1'b1;
-            green <= 1'b1;
-            blue <= 1'b1;
-        // If we are outside of a sprite, make the pixel black
-        end else begin
+            // If we are inside a sprite, make the pixel white
+            end else if (in_paddle1 || in_paddle2 || (in_square && sq_shown) || in_net
+                || in_score_p1_d1 || in_score_p1_d2 || in_score_p2_d1 || in_score_p2_d2) begin
+                red <= 1'b1;
+                green <= 1'b1;
+                blue <= 1'b1;
+            // If we are outside of a sprite, make the pixel black
+            end else begin
+                red <= 1'b0;
+                green <= 1'b0;
+                blue <= 1'b0;
+            end
+
+        end else begin          // If we are outside the active video region, show black
             red <= 1'b0;
             green <= 1'b0;
             blue <= 1'b0;
