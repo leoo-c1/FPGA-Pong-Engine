@@ -19,7 +19,7 @@ module text_display #(
     wire [2:0] rom_col = rel_x / SCALE;
 
     // Bounds Check
-    wire in_box = (pixel_x >= x_pos) && (pixel_x < x_pos + 8*SCALE) &&
+    wire in_box = (pixel_x >= x_pos) && (pixel_x < x_pos + 6*SCALE) &&
                   (pixel_y >= y_pos) && (pixel_y < y_pos + 8*SCALE);
 
     // ROM lookup
