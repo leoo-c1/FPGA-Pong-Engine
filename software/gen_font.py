@@ -7,7 +7,7 @@ OUTPUT_FILE = "font_rom.v"
 def generate_verilog():
     # Try to grab a ttf, otherwise fall back to PIL default
     try:
-        font = ImageFont.truetype("arial.ttf", 10) 
+        font = ImageFont.truetype("arial.ttf", 11) 
     except:
         font = ImageFont.load_default()
 
