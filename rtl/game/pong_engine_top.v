@@ -50,10 +50,8 @@ module pong_engine_top #(
     vga_sync vga_sync_logic (
         .clk_0(clk_0),
         .rst(1'b1),
-        .h_sync(h_sync),
-        .v_sync(v_sync),
-        .pixel_x(pixel_x),
-        .pixel_y(pixel_y),
+        .h_sync(h_sync), .v_sync(v_sync),
+        .pixel_x(pixel_x), .pixel_y(pixel_y),
         .video_on(video_on)
     );
 
@@ -69,41 +67,28 @@ module pong_engine_top #(
     pong_logic game_state (
         .clk_0(clk_0),
         .rst(rst),
-        .up_p1(debounced_signal[0]),
-        .down_p1(debounced_signal[1]),
-        .up_p2(debounced_signal[2]),
-        .down_p2(debounced_signal[3]),
-        .sq_xpos(square_xpos),
-        .sq_ypos(square_ypos),
-        .pdl1_xpos(paddle1_xpos),
-        .pdl1_ypos(paddle1_ypos),
-        .pdl2_xpos(paddle2_xpos),
-        .pdl2_ypos(paddle2_ypos),
+        .up_p1(debounced_signal[0]), .down_p1(debounced_signal[1]),
+        .up_p2(debounced_signal[2]), .down_p2(debounced_signal[3]),
+        .sq_xpos(square_xpos), .sq_ypos(square_ypos),
+        .pdl1_xpos(paddle1_xpos), .pdl1_ypos(paddle1_ypos),
+        .pdl2_xpos(paddle2_xpos), .pdl2_ypos(paddle2_ypos),
         .sq_shown(sq_shown),
-        .score_p1(score_p1),
-        .score_p2(score_p2),
+        .score_p1(score_p1), .score_p2(score_p2),
         .game_over(game_over)
     );
 
     pong_renderer game_scene (
         .clk_0(clk_0),
         .rst(rst),
-        .pixel_x(pixel_x),
-        .pixel_y(pixel_y),
+        .pixel_x(pixel_x), .pixel_y(pixel_y),
         .video_on(video_on),
-        .square_xpos(square_xpos),
-        .square_ypos(square_ypos),
-        .paddle1_xpos(paddle1_xpos),
-        .paddle1_ypos(paddle1_ypos),
-        .paddle2_xpos(paddle2_xpos),
-        .paddle2_ypos(paddle2_ypos),
+        .square_xpos(square_xpos), .square_ypos(square_ypos),
+        .paddle1_xpos(paddle1_xpos), .paddle1_ypos(paddle1_ypos),
+        .paddle2_xpos(paddle2_xpos), .paddle2_ypos(paddle2_ypos),
         .sq_shown(sq_shown),
-        .score_p1(score_p1),
-        .score_p2(score_p2),
+        .score_p1(score_p1), .score_p2(score_p2),
         .game_over(game_over),
-        .red(red),
-        .green(green),
-        .blue(blue)
+        .red(red), .green(green), .blue(blue)
     );
 
 endmodule
