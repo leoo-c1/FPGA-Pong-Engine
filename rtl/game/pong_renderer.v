@@ -60,6 +60,7 @@ module pong_renderer (
     wire in_score_p1_d2;            // If the current pixel is digit 2 of player 1's score
     wire in_score_p2_d1;            // If the current pixel is digit 1 of player 2's score
     wire in_score_p2_d2;            // If the current pixel is digit 2 of player 2's score
+    wire in_startup_text;           // If the current pixel is in the startup text ('PONG...')
 
     // Digit 1 of player 1's score
     score_display score_p1_dig1 (
@@ -107,6 +108,17 @@ module pong_renderer (
         .y_pos(score_ypos),
         .number(score_p2_d2),
         .pixel_on(in_score_p2_d2)
+    );
+
+    /* Startup text:
+            PONG
+    Press any key to start
+    */
+    startup_text startup_menu (
+        .clk_0(clk_0),
+        .rst(rst),
+        .pixel_x(pixel_x), .pixel_y(pixel_y),
+        .in_text(in_startup_text)
     );
 
     always @ (posedge clk_0) begin
