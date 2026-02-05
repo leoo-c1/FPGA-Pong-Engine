@@ -34,7 +34,7 @@ module string_display #(
                 .rst(rst),
                 .pixel_x(pixel_x), 
                 .pixel_y(pixel_y),
-                .x_pos(x_pos + X_OFFSET[9:0]),  // Apply calculated offset
+                .x_pos(x_pos + X_OFFSET),  // Apply calculated offset
                 .y_pos(y_pos),
                 .char_code(CHAR_VAL[6:0]),      // Truncate to 7-bit ASCII
                 .pixel_on(char_pixels[i])
