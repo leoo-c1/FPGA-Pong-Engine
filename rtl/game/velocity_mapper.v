@@ -12,21 +12,21 @@ module velocity_mapper #(
     input game_startup,         // Whether or not the game is on the startup menu
 
     output reg [8:0] sq_xvel,   // Squares's horizontal velocity in pixels/second
-    output reg [8:0] sq_yvel,   // Squares's vertical velocity in pixels/second
+    output reg [8:0] sq_yvel    // Squares's vertical velocity in pixels/second
     );
 
     parameter pdl_height = 96;
 
     parameter SCALE_VELX = 2 * (MAX_VEL - MIN_VEL) / pdl_height;
-    parameter SCALE_VELY = 2 * MAX_VEL / pdl_height
+    parameter SCALE_VELY = 2 * MAX_VEL / pdl_height;
 
     always @ (posedge clk_0) begin
         if (!rst) begin         // If we reset, set velocities to default velocity
-            sq_xvel <= DEFAULT_VEL;
-            sq_yvel <= DEFAULT_VEL;
+            sq_xvel <= MIN_VEL;
+            sq_yvel <= MIN_VEL;
         end else if (sq_missed | game_over | game_startup) begin
-            sq_xvel <= DEFAULT_VEL;
-            sq_yvel <= DEFAULT_VEL;
+            sq_xvel <= MIN_VEL;
+            sq_yvel <= MIN_VEL;
         end else begin
             sq_xvel <= SCALE_VELX * hit_y + MIN_VEL;
             sq_yvel <= SCALE_VELY * hit_y;
