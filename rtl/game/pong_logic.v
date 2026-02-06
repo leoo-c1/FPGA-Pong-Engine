@@ -8,8 +8,9 @@ module pong_logic (
     input wire up_p2,       // Player 2 up
     input wire down_p2,     // Player 2 down
 
-    // Ball velocity
-
+    // Square's horizontal/vertical velocity in pixels/second
+    input wire [8:0] sq_xvel,
+    input wire [8:0] sq_yvel,
 
     // Coordinates for the top left corner of each sprite
     output reg [9:0] sq_xpos = h_video /2,
@@ -29,8 +30,8 @@ module pong_logic (
     output reg game_startup = 1'b1, // Whether or not the game is on the startup menu
     output reg sq_missed = 1'b1,    // If the we miss the square and it hits the left/right side
 
-    // Ball collision point
-    output reg [6:0] hit_y,         // The distance from paddle centre to the ball during a hit
+    // Square collision point
+    output reg [6:0] hit_y,         // The distance from paddle centre to the square during a hit
     );
 
     parameter h_video = 640;        // Horizontal active video (in pixels)
@@ -41,8 +42,14 @@ module pong_logic (
     parameter pdl_height = 96;      // The height of the paddle 
 
     // Square velocity setup
-    parameter sq_xvel = 200;                    // Squares's horizontal velocity in pixels/second
-    parameter sq_yvel = 200;                    // Squares's vertical velocity in pixels/second
+    velocity_mapper sq_velocity (
+        .clk_0(clk_0),
+        .rst(rst),
+        .hit_y(hit_y),
+        .sq_missed(sq_missed), .game_over(game_over), .game_startup(game_startup),
+        .sq_xvel(sq_xvel), .sq_yvel(sq_yvel)
+    );
+
     parameter sq_xvel_psc = 25_175_000/sq_xvel; // Clock prescaler for horizontal square velocity
     parameter sq_yvel_psc = 25_175_000/sq_yvel; // Clock prescaler for vertical square velocity
     reg [18:0] sq_xvel_count = 0;               // Horizontal velocity ticker
