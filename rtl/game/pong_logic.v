@@ -27,7 +27,7 @@ module pong_logic (
     output reg sq_missed = 1'b1,    // If the we miss the square and it hits the left/right side
 
     // Square collision point
-    output reg [6:0] hit_y          // The distance from paddle centre to the square during a hit
+    output reg [6:0] hit_y = 0      // The distance from paddle centre to the square during a hit
     );
 
     parameter h_video = 640;        // Horizontal active video (in pixels)
@@ -46,11 +46,12 @@ module pong_logic (
     reg [24:0] y_acc = 0;
     reg sq_xveldir = 1'b0;          // Square's direction of velocity along x, 0 = left, 1 = right
     reg sq_yveldir = 1'b0;          // Square's direction of velocity along y, 0 = up, 1 = down
+    reg paddle_hit = 1'b0;          // Whether or not we just hit a paddle
 
     velocity_mapper sq_velocity (
         .clk_0(clk_0),
         .rst(rst),
-        .hit_y(hit_y),
+        .paddle_hit(paddle_hit), .hit_y(hit_y),
         .sq_missed(sq_missed), .game_over(game_over), .game_startup(game_startup),
         .sq_xvel(sq_xvel), .sq_yvel(sq_yvel)
     );
@@ -79,6 +80,8 @@ module pong_logic (
             sq_ypos <= v_video / 2;
             x_acc <= 0;
             y_acc <= 0;
+            paddle_hit <= 1'b0;
+            hit_y <= 0;
             pdl1_vel_count <= 0;
             pdl2_vel_count <= 0;
             sq_xveldir <= 1'b0;
@@ -128,6 +131,8 @@ module pong_logic (
                     end
             end
         end else begin
+            paddle_hit <= 1'b0;         // Default to no hit
+
             // Square collision with right wall
             if (sq_xpos >= h_video - sq_width - 1) begin // Reset game state
                 sq_missed <= 1'b1;
@@ -175,6 +180,7 @@ module pong_logic (
                 // Check if the top/bottom right corner of the square hits the paddle
                 if (sq_ypos <= pdl2_ypos + pdl_height && 
                     sq_ypos + sq_width >= pdl2_ypos) begin
+                    paddle_hit <= 1'b1;
                     // Check if top of the square is hitting the bottom of the paddle
                     if (sq_ypos == pdl2_ypos + pdl_height ||
                         sq_ypos == pdl2_ypos + pdl_height - 1) begin
@@ -210,6 +216,7 @@ module pong_logic (
                 // If top/bottom left corner of the square is hitting the left paddle's right side
                 if (sq_ypos <= pdl1_ypos + pdl_height && 
                     sq_ypos + sq_width >= pdl1_ypos) begin
+                    paddle_hit <= 1'b1;
                     // Check if top of the square is hitting the bottom of the paddle
                     if (sq_ypos == pdl1_ypos + pdl_height ||
                         sq_ypos == pdl1_ypos + pdl_height - 1) begin
@@ -265,9 +272,9 @@ module pong_logic (
 
                 // Control square's y position
                 if (y_acc < VEL_THRESHOLD) begin
-                    y_acc <= y_acc + sq_xvel;
+                    y_acc <= y_acc + sq_yvel;
                 end else begin          // Increment square position every velocity tick
-                    x_acc <= x_acc - VEL_THRESHOLD + sq_xvel;
+                    y_acc <= y_acc - VEL_THRESHOLD + sq_yvel;
                     sq_ypos <= sq_ypos + 2*sq_yveldir - 1;  // sq_yveldir: 0 = up, 1 = down
                 end
             end
