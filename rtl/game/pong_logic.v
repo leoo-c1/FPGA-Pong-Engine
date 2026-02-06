@@ -8,10 +8,6 @@ module pong_logic (
     input wire up_p2,       // Player 2 up
     input wire down_p2,     // Player 2 down
 
-    // Square's horizontal/vertical velocity in pixels/second
-    input wire [8:0] sq_xvel,
-    input wire [8:0] sq_yvel,
-
     // Coordinates for the top left corner of each sprite
     output reg [9:0] sq_xpos = h_video /2,
     output reg [9:0] sq_ypos = v_video/2,
@@ -43,7 +39,8 @@ module pong_logic (
 
     // Square velocity setup
     parameter VEL_THRESHOLD = 25_175_000;
-    
+    wire [8:0] sq_xvel;
+    wire [8:0] sq_yvel;
     // Accumulators to store partial pixel progress.
     reg [24:0] x_acc = 0;
     reg [24:0] y_acc = 0;
