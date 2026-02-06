@@ -42,6 +42,14 @@ module pong_logic (
     parameter pdl_height = 96;      // The height of the paddle 
 
     // Square velocity setup
+    parameter VEL_THRESHOLD = 25_175_000;
+    
+    // Accumulators to store partial pixel progress.
+    reg [24:0] x_acc = 0;
+    reg [24:0] y_acc = 0;
+    reg sq_xveldir = 1'b0;          // Square's direction of velocity along x, 0 = left, 1 = right
+    reg sq_yveldir = 1'b0;          // Square's direction of velocity along y, 0 = up, 1 = down
+
     velocity_mapper sq_velocity (
         .clk_0(clk_0),
         .rst(rst),
@@ -49,13 +57,6 @@ module pong_logic (
         .sq_missed(sq_missed), .game_over(game_over), .game_startup(game_startup),
         .sq_xvel(sq_xvel), .sq_yvel(sq_yvel)
     );
-
-    parameter sq_xvel_psc = 25_175_000/sq_xvel; // Clock prescaler for horizontal square velocity
-    parameter sq_yvel_psc = 25_175_000/sq_yvel; // Clock prescaler for vertical square velocity
-    reg [18:0] sq_xvel_count = 0;               // Horizontal velocity ticker
-    reg [18:0] sq_yvel_count = 0;               // Vertical velocity ticker
-    reg sq_xveldir = 1'b0;          // Square's direction of velocity along x, 0 = left, 1 = right
-    reg sq_yveldir = 1'b0;          // Square's direction of velocity along y, 0 = up, 1 = down
 
     // Paddle velocity setup
     parameter pdl_vel = 400;                        // Paddles' velocities in pixels/second
@@ -74,13 +75,13 @@ module pong_logic (
     parameter safe_start_time = 2_500_000;
     reg [21:0] safe_start_count = 0;
 
-    always @ (posedge clk_0, negedge rst) begin
-        if (!rst) begin        // If we reset
-            // Reset the score and sprites' positions and velocities
-            sq_xpos <= h_video /2;
-            sq_ypos <= v_video /2;
-            sq_xvel_count <= 0;
-            sq_yvel_count <= 0;
+    // Helper task to reset game state
+    task reset_game_state;
+        begin
+            sq_xpos <= h_video / 2;
+            sq_ypos <= v_video / 2;
+            x_acc <= 0;
+            y_acc <= 0;
             pdl1_vel_count <= 0;
             pdl2_vel_count <= 0;
             sq_xveldir <= 1'b0;
@@ -94,28 +95,19 @@ module pong_logic (
             delay_count <= 0;
             score_p1 <= 0;
             score_p2 <= 0;
+        end
+    endtask
+
+    always @ (posedge clk_0, negedge rst) begin
+        if (!rst) begin        // If we reset
+            // Reset the score and sprites' positions and velocities
+            reset_game_state();
             game_over <= 1'b0;
             game_startup <= 1'b1;
             safe_start_count <= 0;
         end else if (game_over) begin   // If the game is over
             // Reset the score and sprites' positions and velocities
-            sq_xpos <= h_video /2;
-            sq_ypos <= v_video /2;
-            sq_xvel_count <= 0;
-            sq_yvel_count <= 0;
-            pdl1_vel_count <= 0;
-            pdl2_vel_count <= 0;
-            sq_xveldir <= 1'b0;
-            sq_yveldir <= 1'b0;
-            pdl1_xpos <= 24;
-            pdl1_ypos <= 191;
-            pdl2_xpos <= 603;
-            pdl2_ypos <= 191;
-            sq_shown <= 1'b0;
-            sq_missed <= 1'b1;
-            delay_count <= 0;
-            score_p1 <= 0;
-            score_p2 <= 0;
+            reset_game_state();
             game_over <= 1'b1;
             game_startup <= 1'b0;
             safe_start_count <= 0;
@@ -125,23 +117,7 @@ module pong_logic (
                     end
         end else if (game_startup) begin    // If we're on the startup menu
             // Reset the score and sprites' positions and velocities
-            sq_xpos <= h_video /2;
-            sq_ypos <= v_video /2;
-            sq_xvel_count <= 0;
-            sq_yvel_count <= 0;
-            pdl1_vel_count <= 0;
-            pdl2_vel_count <= 0;
-            sq_xveldir <= 1'b0;
-            sq_yveldir <= 1'b0;
-            pdl1_xpos <= 24;
-            pdl1_ypos <= 191;
-            pdl2_xpos <= 603;
-            pdl2_ypos <= 191;
-            sq_shown <= 1'b0;
-            sq_missed <= 1'b1;
-            delay_count <= 0;
-            score_p1 <= 0;
-            score_p2 <= 0;
+            reset_game_state();
             game_over <= 1'b0;
             game_startup <= 1'b1;
             // Stay in start up until user presses buttons (after safety delay passes)
@@ -160,8 +136,8 @@ module pong_logic (
                 sq_missed <= 1'b1;
                 sq_xpos <= h_video /2;
                 sq_ypos <= v_video /2;
-                sq_xvel_count <= 0;
-                sq_yvel_count <= 0;
+                x_acc <= 0;
+                y_acc <= 0;
                 sq_xveldir <= 1'b0;
                 sq_yveldir <= 1'b0;
                 if (score_p1 < max_score - 1) begin
@@ -176,8 +152,8 @@ module pong_logic (
                 sq_missed <= 1'b1;
                 sq_xpos <= h_video /2;
                 sq_ypos <= v_video /2;
-                sq_xvel_count <= 0;
-                sq_yvel_count <= 0;
+                x_acc <= 0;
+                y_acc <= 0;
                 sq_xveldir <= 1'b0;
                 sq_yveldir <= 1'b0;
                 if (score_p2 < max_score - 1) begin
@@ -283,18 +259,18 @@ module pong_logic (
 
             if (sq_shown) begin         // Only update square if it is being shown
                 // Control square's x position
-                if (sq_xvel_count < sq_xvel_psc) begin
-                    sq_xvel_count <= sq_xvel_count + 1;
+                if (x_acc < VEL_THRESHOLD) begin
+                    x_acc <= x_acc + sq_xvel;
                 end else begin          // Increment square position every velocity tick
-                    sq_xvel_count <= 0;
+                    x_acc <= x_acc - VEL_THRESHOLD + sq_xvel;
                     sq_xpos <= sq_xpos + 2*sq_xveldir - 1;  // sq_xveldir: 0 = left, 1 = right
                 end
 
                 // Control square's y position
-                if (sq_yvel_count < sq_yvel_psc) begin
-                    sq_yvel_count <= sq_yvel_count + 1;
+                if (y_acc < VEL_THRESHOLD) begin
+                    y_acc <= y_acc + sq_xvel;
                 end else begin          // Increment square position every velocity tick
-                    sq_yvel_count <= 0;
+                    x_acc <= x_acc - VEL_THRESHOLD + sq_xvel;
                     sq_ypos <= sq_ypos + 2*sq_yveldir - 1;  // sq_yveldir: 0 = up, 1 = down
                 end
             end
