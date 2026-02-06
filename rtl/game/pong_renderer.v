@@ -35,9 +35,6 @@ module pong_renderer (
     parameter square_width = 16;    // The side lengths of the square
     parameter paddle_width = 12;    // The thickness of the paddle
     parameter paddle_height = 96;   // The height of the paddle
-    parameter net_width = 12;       // The side lengths of the net squares
-
-    reg [4:0] net_counter = 0;
 
     reg in_square = 1'b0;           // If current pixel is inside the square
     wire in_square_raw;
@@ -45,7 +42,7 @@ module pong_renderer (
     wire in_paddle1_raw;
     reg in_paddle2 = 1'b0;          // If current pixel is inside paddle2
     wire in_paddle2_raw;
-    reg in_net = 1'b0;              // If current pixel is inside the net
+    wire in_net;                    // If the current pixel is in the net
     wire in_scoreboard;             // If the current pixel is in the scoreboard
     wire in_startup_text;           // If the current pixel is in the startup text ('PONG...')
     wire in_over_text;              // If the current pixel is in the game over text
@@ -77,6 +74,16 @@ module pong_renderer (
         .pixel_on(in_scoreboard)
     );
 
+    // Net
+    net_renderer draw_net (
+        .clk(clk_0),
+        .rst(rst),
+        .pixel_x(pixel_x),
+        .pixel_y(pixel_y),
+        .video_on(video_on),
+        .pixel_on(in_net)
+    );
+
     // Detect square
     rect_renderer #(.WIDTH(square_width), .HEIGHT(square_width)) draw_sq (
         .pixel_x(pixel_x), .pixel_y(pixel_y),
@@ -106,36 +113,12 @@ module pong_renderer (
             in_square <= 1'b0;
             in_paddle1 <= 1'b0;
             in_paddle2 <= 1'b0;
-            in_net <= 1'b0;
-            net_counter <= 0;
 
         end else if (video_on) begin    // If we are in the active video region
             // Continuously check if we are in a sprite
             in_square <= in_square_raw;
             in_paddle1 <= in_paddle1_raw;
             in_paddle2 <= in_paddle2_raw;
-
-            if (pixel_y == 0 && pixel_x == 0) begin
-                net_counter <= 18; 
-            end 
-            // Check for Start of New Line
-            else if (pixel_x == 0) begin
-                if (net_counter == 23) begin
-                    net_counter <= 0;
-                end else begin
-                    net_counter <= net_counter + 1;
-                end
-            end
-
-            if (pixel_x >= h_video/2 - net_width/2 && pixel_x <= h_video/2 + net_width/2 - 1) begin
-                if (net_counter < 12) begin
-                    in_net <= 1'b1;
-                end
-            end else begin
-                in_net <= 1'b0;
-            end
-
-            
 
             // If we are on the startup menu
             if (game_startup) begin
