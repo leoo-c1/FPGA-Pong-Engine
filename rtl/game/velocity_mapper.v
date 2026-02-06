@@ -5,6 +5,7 @@ module velocity_mapper #(
     input clk_0,                // 25.175MHz clock
     input rst,                  // Reset key
 
+    input wire paddle_hit,      // Whether or not we just hit a paddle
     input wire [6:0] hit_y,     // The distance from paddle centre to the square during a hit
 
     input sq_missed,            // Whether or not the square went out of bounds
@@ -27,7 +28,7 @@ module velocity_mapper #(
         end else if (sq_missed | game_over | game_startup) begin
             sq_xvel <= MIN_VEL;
             sq_yvel <= MIN_VEL;
-        end else begin
+        end else if (paddle_hit) begin
             sq_xvel <= SCALE_VELX * hit_y + MIN_VEL;
             sq_yvel <= SCALE_VELY * hit_y;
         end
