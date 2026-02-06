@@ -37,77 +37,20 @@ module pong_renderer (
     parameter paddle_height = 96;   // The height of the paddle
     parameter net_width = 12;       // The side lengths of the net squares
 
-    parameter score_p1_d1x = 262;   // x-coordinate for top left of digit 1 of player 1's score
-    parameter score_p1_d2x = 220;   // x-coordinate for top left of digit 2 of player 1's score
-
-    parameter score_p2_d1x = 388;   // x-coordinate for top left of digit 1 of player 2's score
-    parameter score_p2_d2x = 346;   // x-coordinate for top left of digit 2 of player 2's score
-
-    parameter score_ypos = 28;      // y-coordinate for top left both scores' digits
-
-    reg [3:0] score_p1_d1 = 0;      // Digit 1 of player 1's score
-    reg [3:0] score_p1_d2 = 0;      // Digit 2 of player 1's score
-
-    reg [3:0] score_p2_d1 = 0;      // Digit 1 of player 2's score
-    reg [3:0] score_p2_d2 = 0;      // Digit 2 of player 2's score
-
     reg [4:0] net_counter = 0;
 
     reg in_square = 1'b0;           // If current pixel is inside the square
+    wire in_square_raw;
     reg in_paddle1 = 1'b0;          // If current pixel is inside paddle1
+    wire in_paddle1_raw;
     reg in_paddle2 = 1'b0;          // If current pixel is inside paddle2
+    wire in_paddle2_raw;
     reg in_net = 1'b0;              // If current pixel is inside the net
-    wire in_score_p1_d1;            // If the current pixel is digit 1 of player 1's score
-    wire in_score_p1_d2;            // If the current pixel is digit 2 of player 1's score
-    wire in_score_p2_d1;            // If the current pixel is digit 1 of player 2's score
-    wire in_score_p2_d2;            // If the current pixel is digit 2 of player 2's score
+    wire in_scoreboard;             // If the current pixel is in the scoreboard
     wire in_startup_text;           // If the current pixel is in the startup text ('PONG...')
     wire in_over_text;              // If the current pixel is in the game over text
 
-    // Digit 1 of player 1's score
-    score_display score_p1_dig1 (
-        .clk_0(clk_0),
-        .rst(rst),
-        .pixel_x(pixel_x), .pixel_y(pixel_y),
-        .x_pos(score_p1_d1x), .y_pos(score_ypos),
-        .number(score_p1_d1),
-        .pixel_on(in_score_p1_d1)
-    );
-
-    // Digit 2 of player 1's score
-    score_display score_p1_dig2 (
-        .clk_0(clk_0),
-        .rst(rst),
-        .pixel_x(pixel_x), .pixel_y(pixel_y),
-        .x_pos(score_p1_d2x), .y_pos(score_ypos),
-        .number(score_p1_d2),
-        .pixel_on(in_score_p1_d2)
-    );
-
-    // Digit 1 of player 2's score
-    score_display score_p2_dig1 (
-        .clk_0(clk_0),
-        .rst(rst),
-        .pixel_x(pixel_x), .pixel_y(pixel_y),
-        .x_pos(score_p2_d1x), .y_pos(score_ypos),
-        .number(score_p2_d1),
-        .pixel_on(in_score_p2_d1)
-    );
-
-    // Digit 2 of player 2's score
-    score_display score_p2_dig2 (
-        .clk_0(clk_0),
-        .rst(rst),
-        .pixel_x(pixel_x), .pixel_y(pixel_y),
-        .x_pos(score_p2_d2x), .y_pos(score_ypos),
-        .number(score_p2_d2),
-        .pixel_on(in_score_p2_d2)
-    );
-
-    /* Startup text:
-            PONG
-    Press any key to start
-    */
+    // Startup text
     startup_text startup_menu (
         .clk_0(clk_0),
         .rst(rst),
@@ -115,15 +58,44 @@ module pong_renderer (
         .in_text(in_startup_text)
     );
 
-    /* Game over text:
-          Game over!
-    Press any key to start
-    */
+    // Game over text
     game_over game_over_text (
         .clk_0(clk_0),
         .rst(rst),
         .pixel_x(pixel_x), .pixel_y(pixel_y),
         .in_text(in_over_text)
+    );
+
+    // Scoreboard
+    scoreboard_renderer scoreboard (
+        .clk(clk_0),
+        .rst(rst),
+        .pixel_x(pixel_x),
+        .pixel_y(pixel_y),
+        .score_p1(score_p1),
+        .score_p2(score_p2),
+        .pixel_on(in_scoreboard)
+    );
+
+    // Detect square
+    rect_renderer #(.WIDTH(square_width), .HEIGHT(square_width)) draw_sq (
+        .pixel_x(pixel_x), .pixel_y(pixel_y),
+        .rect_x(square_xpos), .rect_y(square_ypos),
+        .is_active(in_square_raw)
+    );
+    
+    // Detect paddle 1
+    rect_renderer #(.WIDTH(paddle_width), .HEIGHT(paddle_height)) draw_p1 (
+        .pixel_x(pixel_x), .pixel_y(pixel_y),
+        .rect_x(paddle1_xpos), .rect_y(paddle1_ypos),
+        .is_active(in_paddle1_raw)
+    );
+
+    // Detect paddle 2
+    rect_renderer #(.WIDTH(paddle_width), .HEIGHT(paddle_height)) draw_p1 (
+        .pixel_x(pixel_x), .pixel_y(pixel_y),
+        .rect_x(paddle2_xpos), .rect_y(paddle2_ypos),
+        .is_active(in_paddle2_raw)
     );
 
     always @ (posedge clk_0) begin
@@ -138,50 +110,10 @@ module pong_renderer (
             net_counter <= 0;
 
         end else if (video_on) begin    // If we are in the active video region
-            // If the pixel is within the horizontal limits of the square
-            if (pixel_x >= square_xpos && pixel_x <= square_xpos + square_width) begin
-                // If the pixel is within the vertical limits of the square
-                if (pixel_y >= square_ypos && pixel_y <= square_ypos + square_width) begin
-                    // Indicate we are inside the square
-                    in_square <= 1'b1;
-                end else begin
-                    // Indicate we are outside the square
-                    in_square <= 1'b0;
-                end
-            end else begin
-                // Indicate we are outside the square
-                in_square <= 1'b0;
-            end
-
-            // If the pixel is within the horizontal limits of paddle1
-            if (pixel_x >= paddle1_xpos && pixel_x <= paddle1_xpos + paddle_width) begin
-                // If the pixel is within the vertical limits of paddle1
-                if (pixel_y >= paddle1_ypos && pixel_y <= paddle1_ypos + paddle_height) begin
-                    // Indicate we are inside paddle1
-                    in_paddle1 <= 1'b1;
-                end else begin
-                    // Indicate we are outside paddle1
-                    in_paddle1 <= 1'b0;
-                end
-            end else begin
-                // Indicate we are outside paddle1
-                in_paddle1 <= 1'b0;
-            end
-
-            // If the pixel is within the horizontal limits of paddle2
-            if (pixel_x >= paddle2_xpos && pixel_x <= paddle2_xpos + paddle_width) begin
-                // If the pixel is within the vertical limits of paddle2
-                if (pixel_y >= paddle2_ypos && pixel_y <= paddle2_ypos + paddle_height) begin
-                    // Indicate we are inside paddle2
-                    in_paddle2 <= 1'b1;
-                end else begin
-                    // Indicate we are outside paddle2
-                    in_paddle2 <= 1'b0;
-                end
-            end else begin
-                // Indicate we are outside paddle2
-                in_paddle2 <= 1'b0;
-            end
+            // Continuously check if we are in a sprite
+            in_square <= in_square_raw;
+            in_paddle1 <= in_paddle1_raw;
+            in_paddle2 <= in_paddle2_raw;
 
             if (pixel_y == 0 && pixel_x == 0) begin
                 net_counter <= 18; 
@@ -203,35 +135,7 @@ module pong_renderer (
                 in_net <= 1'b0;
             end
 
-            // Handle assigning digits of player 1's score
-            if (score_p1 <= 9) begin
-                score_p1_d1 <= score_p1;
-                score_p1_d2 <= 0;
-            end else if (score_p1 == 10) begin
-                score_p1_d1 <= 0;
-                score_p1_d2 <= 1;
-            end else if (score_p1 == 11) begin
-                score_p1_d1 <= 1;
-                score_p1_d2 <= 1;
-            end else begin
-                score_p1_d1 <= 0;
-                score_p1_d2 <= 0;
-            end
-
-            // Handle assigning digits of player 2's score
-            if (score_p2 <= 9) begin
-                score_p2_d1 <= score_p2;
-                score_p2_d2 <= 0;
-            end else if (score_p2 == 10) begin
-                score_p2_d1 <= 0;
-                score_p2_d2 <= 1;
-            end else if (score_p2 == 11) begin
-                score_p2_d1 <= 1;
-                score_p2_d2 <= 1;
-            end else begin
-                score_p2_d1 <= 0;
-                score_p2_d2 <= 0;
-            end
+            
 
             // If we are on the startup menu
             if (game_startup) begin
@@ -258,8 +162,8 @@ module pong_renderer (
                 end
 
             // If we are inside a game sprite, make the pixel white
-            end else if (in_paddle1 || in_paddle2 || (in_square && sq_shown) || in_net
-                || in_score_p1_d1 || in_score_p1_d2 || in_score_p2_d1 || in_score_p2_d2) begin
+            end else if (in_paddle1 || in_paddle2 || (in_square && sq_shown) || 
+                        in_net || in_scoreboard) begin
                 red <= 1'b1;
                 green <= 1'b1;
                 blue <= 1'b1;
