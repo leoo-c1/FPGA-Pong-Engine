@@ -94,4 +94,9 @@ set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 set_global_assignment -name TIMING_ANALYZER_MULTICORNER_ANALYSIS ON
 set_global_assignment -name SMART_RECOMPILE ON
+set_global_assignment -name VERILOG_FILE ../rtl/game/rect_renderer.v
+set_global_assignment -name VERILOG_FILE ../rtl/game/scoreboard_renderer.v
+set_global_assignment -name VERILOG_FILE ../rtl/game/net_renderer.v
+set_global_assignment -name VERILOG_FILE ../rtl/game/paddle_control.v
+set_global_assignment -name VERILOG_FILE ../rtl/inputs/input_bridge.v
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
