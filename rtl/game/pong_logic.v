@@ -34,11 +34,14 @@ module pong_logic (
     parameter pdl_height = 96;      // The height of the paddle 
 
     // Square velocity setup
-    parameter sq_vel = 200;                     // Squares's velocity in pixels/second
-    parameter sq_vel_psc = 25_175_000/sq_vel;   // Clock prescaler for square's velocity
-    reg [18:0] sq_vel_count = 0;                // Velocity ticker
-    reg sq_xvel = 1'b0;         // Square's direction of velocity along x, 0 = left, 1 = right
-    reg sq_yvel = 1'b0;         // Square's direction of velocity along y, 0 = up, 1 = down
+    parameter sq_xvel = 200;                    // Squares's horizontal velocity in pixels/second
+    parameter sq_yvel = 200;                    // Squares's vertical velocity in pixels/second
+    parameter sq_xvel_psc = 25_175_000/sq_xvel; // Clock prescaler for horizontal square velocity
+    parameter sq_yvel_psc = 25_175_000/sq_yvel; // Clock prescaler for vertical square velocity
+    reg [18:0] sq_xvel_count = 0;               // Horizontal velocity ticker
+    reg [18:0] sq_yvel_count = 0;               // Vertical velocity ticker
+    reg sq_xveldir = 1'b0;          // Square's direction of velocity along x, 0 = left, 1 = right
+    reg sq_yveldir = 1'b0;          // Square's direction of velocity along y, 0 = up, 1 = down
 
     // Paddle velocity setup
     parameter pdl_vel = 400;                        // Paddles' velocities in pixels/second
@@ -65,11 +68,12 @@ module pong_logic (
             // Reset the score and sprites' positions and velocities
             sq_xpos <= h_video /2;
             sq_ypos <= v_video /2;
-            sq_vel_count <= 0;
+            sq_xvel_count <= 0;
+            sq_yvel_count <= 0;
             pdl1_vel_count <= 0;
             pdl2_vel_count <= 0;
-            sq_xvel <= 1'b0;
-            sq_yvel <= 1'b0;
+            sq_xveldir <= 1'b0;
+            sq_yveldir <= 1'b0;
             pdl1_xpos <= 24;
             pdl1_ypos <= 191;
             pdl2_xpos <= 603;
@@ -86,11 +90,12 @@ module pong_logic (
             // Reset the score and sprites' positions and velocities
             sq_xpos <= h_video /2;
             sq_ypos <= v_video /2;
-            sq_vel_count <= 0;
+            sq_xvel_count <= 0;
+            sq_yvel_count <= 0;
             pdl1_vel_count <= 0;
             pdl2_vel_count <= 0;
-            sq_xvel <= 1'b0;
-            sq_yvel <= 1'b0;
+            sq_xveldir <= 1'b0;
+            sq_yveldir <= 1'b0;
             pdl1_xpos <= 24;
             pdl1_ypos <= 191;
             pdl2_xpos <= 603;
@@ -111,11 +116,12 @@ module pong_logic (
             // Reset the score and sprites' positions and velocities
             sq_xpos <= h_video /2;
             sq_ypos <= v_video /2;
-            sq_vel_count <= 0;
+            sq_xvel_count <= 0;
+            sq_yvel_count <= 0;
             pdl1_vel_count <= 0;
             pdl2_vel_count <= 0;
-            sq_xvel <= 1'b0;
-            sq_yvel <= 1'b0;
+            sq_xveldir <= 1'b0;
+            sq_yveldir <= 1'b0;
             pdl1_xpos <= 24;
             pdl1_ypos <= 191;
             pdl2_xpos <= 603;
@@ -143,9 +149,10 @@ module pong_logic (
                 sq_missed <= 1'b1;
                 sq_xpos <= h_video /2;
                 sq_ypos <= v_video /2;
-                sq_vel_count <= 0;
-                sq_xvel <= 1'b0;
-                sq_yvel <= 1'b0;
+                sq_xvel_count <= 0;
+                sq_yvel_count <= 0;
+                sq_xveldir <= 1'b0;
+                sq_yveldir <= 1'b0;
                 if (score_p1 < max_score - 1) begin
                     score_p1 <= score_p1 + 1;
                     game_over <= 1'b0;
@@ -158,9 +165,10 @@ module pong_logic (
                 sq_missed <= 1'b1;
                 sq_xpos <= h_video /2;
                 sq_ypos <= v_video /2;
-                sq_vel_count <= 0;
-                sq_xvel <= 1'b0;
-                sq_yvel <= 1'b0;
+                sq_xvel_count <= 0;
+                sq_yvel_count <= 0;
+                sq_xveldir <= 1'b0;
+                sq_yveldir <= 1'b0;
                 if (score_p2 < max_score - 1) begin
                     score_p2 <= score_p2 + 1;
                     game_over <= 1'b0;
@@ -177,27 +185,27 @@ module pong_logic (
                     // Check if top of the square is hitting the bottom of the paddle
                     if (sq_ypos == pdl1_ypos + pdl_height ||
                         sq_ypos == pdl1_ypos + pdl_height - 1) begin
-                        sq_yvel <= ~sq_yvel;        // Change direction along y-axis
+                        sq_yveldir <= ~sq_yveldir;  // Change direction along y-axis
                         sq_ypos <= sq_ypos + 1;     // Move down one pixel
                     
                     // Check if bottom of the square is hitting the top of the paddle
                     end else if (sq_ypos + sq_width == pdl1_ypos || 
                                 sq_ypos + sq_width == pdl1_ypos + 1) begin
-                        sq_yvel <= ~sq_yvel;        // Change direction along y-axis
+                        sq_yveldir <= ~sq_yveldir;  // Change direction along y-axis
                         sq_ypos <= sq_ypos - 1;     // Move up by one pixel
 
                     end else begin
-                        sq_xvel <= ~sq_xvel;        // Change direction along y-axis
+                        sq_xveldir <= ~sq_xveldir;  // Change direction along y-axis
                         sq_xpos <= sq_xpos + 1;     // Move to the right one pixel
                     end
                 end 
             
             end else if (sq_ypos >= v_video - sq_width - 1) begin    // If we hit the bottom wall
-                sq_yvel <= ~sq_yvel;        // Change direction along y-axis
+                sq_yveldir <= ~sq_yveldir;  // Change direction along y-axis
                 sq_ypos <= sq_ypos - 1;     // Move up by one pixel
 
             end else if (sq_ypos <= 0) begin    // If we hit the top wall
-                sq_yvel <= ~sq_yvel;        // Change direction along y-axis
+                sq_yveldir <= ~sq_yveldir;  // Change direction along y-axis
                 sq_ypos <= sq_ypos + 1;     // Move down one pixel
 
             // Square collision with right paddle
@@ -210,17 +218,17 @@ module pong_logic (
                     // Check if top of the square is hitting the bottom of the paddle
                     if (sq_ypos == pdl2_ypos + pdl_height ||
                         sq_ypos == pdl2_ypos + pdl_height - 1) begin
-                        sq_yvel <= ~sq_yvel;        // Change direction along y-axis
+                        sq_yveldir <= ~sq_yveldir;  // Change direction along y-axis
                         sq_ypos <= sq_ypos + 1;     // Move down one pixel
                     
                     // Check if bottom of the square is hitting the top of the paddle
                     end else if (sq_ypos + sq_width == pdl2_ypos || 
                                 sq_ypos + sq_width == pdl2_ypos + 1) begin
-                        sq_yvel <= ~sq_yvel;        // Change direction along y-axis
+                        sq_yveldir <= ~sq_yveldir;  // Change direction along y-axis
                         sq_ypos <= sq_ypos - 1;     // Move up by one pixel
 
                     end else begin
-                        sq_xvel <= ~sq_xvel;        // Change direction along x-axis
+                        sq_xveldir <= ~sq_xveldir;  // Change direction along x-axis
                         sq_xpos <= sq_xpos - 1;     // Move to the left by one pixel
                     end
                 end
@@ -234,17 +242,17 @@ module pong_logic (
                     // Check if top of the square is hitting the bottom of the paddle
                     if (sq_ypos == pdl1_ypos + pdl_height ||
                         sq_ypos == pdl1_ypos + pdl_height - 1) begin
-                        sq_yvel <= ~sq_yvel;        // Change direction along y-axis
+                        sq_yveldir <= ~sq_yveldir;  // Change direction along y-axis
                         sq_ypos <= sq_ypos + 1;     // Move down one pixel
                     
                     // Check if bottom of the square is hitting the top of the paddle
                     end else if (sq_ypos + sq_width == pdl1_ypos || 
                                 sq_ypos + sq_width == pdl1_ypos + 1) begin
-                        sq_yvel <= ~sq_yvel;        // Change direction along y-axis
+                        sq_yveldir <= ~sq_yveldir;  // Change direction along y-axis
                         sq_ypos <= sq_ypos - 1;     // Move up by one pixel
 
                     end else begin
-                        sq_xvel <= ~sq_xvel;        // Change direction along y-axis
+                        sq_xveldir <= ~sq_xveldir;  // Change direction along y-axis
                         sq_xpos <= sq_xpos + 1;     // Move to the right one pixel
                     end
                 end
@@ -265,16 +273,24 @@ module pong_logic (
                 end
             end
 
-            // Control square's x and y position
             if (sq_shown) begin         // Only update square if it is being shown
-                if (sq_vel_count < sq_vel_psc) begin
-                    sq_vel_count <= sq_vel_count + 1;
+                // Control square's x position
+                if (sq_xvel_count < sq_xvel_psc) begin
+                    sq_xvel_count <= sq_xvel_count + 1;
                 end else begin          // Increment square position every velocity tick
-                    sq_vel_count <= 0;
-                    sq_xpos <= sq_xpos + 2*sq_xvel - 1;
-                    sq_ypos <= sq_ypos + 2*sq_yvel - 1;
+                    sq_xvel_count <= 0;
+                    sq_xpos <= sq_xpos + 2*sq_xveldir - 1;  // sq_xveldir: 0 = left, 1 = right
+                end
+
+                // Control square's y position
+                if (sq_yvel_count < sq_yvel_psc) begin
+                    sq_yvel_count <= sq_yvel_count + 1;
+                end else begin          // Increment square position every velocity tick
+                    sq_yvel_count <= 0;
+                    sq_ypos <= sq_ypos + 2*sq_yveldir - 1;  // sq_yveldir: 0 = up, 1 = down
                 end
             end
+            
 
             // Control left paddle's x and y position
             if (!up_p1) begin           // If player 1 presses up
