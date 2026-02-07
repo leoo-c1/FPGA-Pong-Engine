@@ -173,12 +173,13 @@ module pong_logic (
             paddle_hit <= 1'b0;         // Default to no hit
 
             // Square collision with right wall
-            if (sq_xpos >= h_video - sq_width - 1) begin // Respawn ball
+            if (sq_xpos >= h_video - sq_width - 1) begin    // Respawn ball
                 spawn_ball();
-                if (score_p1 < max_score - 1) begin
+                sq_xveldir <= 1'b1;                         // Let P2 start with the ball
+                if (score_p1 < max_score - 1) begin         // Increment score if possible
                     score_p1 <= score_p1 + 1;
                     game_over <= 1'b0;
-                end else begin
+                end else begin                              // Game over when max score reached
                     game_over <= 1'b1;
                 end
 
