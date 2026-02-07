@@ -9,6 +9,9 @@ BAUD_RATE = 115200
 # Joystick threshold (0.0 to 1.0)
 STICK_DEADZONE = 0.5
 
+# Hex code for "Any Key" trigger
+START_CODE = b'\xAA'
+
 ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=0.01)
 
 # Initialise pygame joystick handling
@@ -67,6 +70,9 @@ class PongDriver(tk.Tk):
         # 0 = Neutral, 1 = Up, -1 = Down
         self.p1_state = 0 
         self.p2_state = 0
+        
+        # Track button states to avoid spamming the start code
+        self.button_held = False
 
     # Keyboard input handling
     def on_key_press(self, event):
@@ -75,6 +81,11 @@ class PongDriver(tk.Tk):
             active_keys.add(key)
             send_uart(controls[key]['press'])
             self.ui_labels[key].config(bg="lime green")
+        
+        # Handle all other keys for game start
+        elif key not in controls and key not in active_keys:
+            active_keys.add(key)
+            send_uart(START_CODE)
 
     def on_key_release(self, event):
         key = event.keysym
@@ -82,6 +93,10 @@ class PongDriver(tk.Tk):
             active_keys.discard(key)
             send_uart(controls[key]['release'])
             self.ui_labels[key].config(bg="lightgray")
+            
+        # Handle release of generic keys
+        elif key not in controls and key in active_keys:
+            active_keys.discard(key)
 
     # Controller input handling
     def poll_controller(self):
@@ -125,6 +140,21 @@ class PongDriver(tk.Tk):
             elif new_p2_state == -1: self.trigger_press('Down')
             
             self.p2_state = new_p2_state
+            
+        # Check for any ps4 controller buttons
+        # If any button is pressed, send the start code
+        any_btn_pressed = False
+        for i in range(joysticks[0].get_numbuttons()):
+            if joysticks[0].get_button(i):
+                any_btn_pressed = True
+                break
+
+        # Handle button state to send signal only on fresh press
+        if any_btn_pressed and not self.button_held:
+            self.button_held = True
+            send_uart(START_CODE)
+        elif not any_btn_pressed and self.button_held:
+            self.button_held = False
 
         # Run again in 10ms
         self.after(10, self.poll_controller)
