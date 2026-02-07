@@ -1,6 +1,7 @@
 module velocity_mapper #(
-    parameter MIN_VEL = 400,    // Used for reset, square missed, centre hit, startup and game over
-    parameter MAX_VEL = 600,    // Maximum velocity in pixels/second for edge hits
+    parameter INIT_XVEL = 300,  // Used on reset, startup or game over
+    parameter MIN_XVEL = 500,   // Used for horizontal velocity on centre hit
+    parameter MAX_XVEL = 600,   // Maximum horizontal velocity in pixels/second for edge hits
     parameter VEL_WIDTH = $clog2(MAX_VEL + 1)   // Width of velocity register
     ) (
     input clk_0,                // 25.175MHz clock
@@ -19,18 +20,18 @@ module velocity_mapper #(
 
     parameter pdl_height = 96;
 
-    parameter SCALE_VELX = 2 * (MAX_VEL - MIN_VEL) / pdl_height;
-    parameter SCALE_VELY = 2 * MAX_VEL / pdl_height;
+    parameter SCALE_VELX = 2 * (MAX_XVEL - MIN_XVEL) / pdl_height;
+    parameter SCALE_VELY = (2 * MAX_XVEL / pdl_height) * 5 / 6;     // Scale by 5/6 for lower angle
 
     always @ (posedge clk_0) begin
         if (!rst) begin         // If we reset, set velocities to default velocity
-            sq_xvel <= MIN_VEL;
-            sq_yvel <= MIN_VEL;
+            sq_xvel <= INIT_XVEL;
+            sq_yvel <= INIT_XVEL * 5 / 6;   // Decrease slope
         end else if (sq_missed | game_over | game_startup) begin
-            sq_xvel <= MIN_VEL;
-            sq_yvel <= MIN_VEL;
+            sq_xvel <= INIT_XVEL;
+            sq_yvel <= INIT_XVEL * 5 / 6;   // Decrease slope
         end else if (paddle_hit) begin
-            sq_xvel <= SCALE_VELX * hit_y + MIN_VEL;
+            sq_xvel <= SCALE_VELX * hit_y + MIN_XVEL;
             sq_yvel <= SCALE_VELY * hit_y;
         end
     end
