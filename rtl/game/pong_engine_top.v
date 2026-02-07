@@ -50,6 +50,8 @@ module pong_engine_top #(
     wire ctrl_p2_up;
     wire ctrl_p2_down;
 
+    wire ctrl_start_trigger;
+
     vga_sync vga_sync_logic (
         .clk_0(clk_0),
         .rst(1'b1),
@@ -65,7 +67,8 @@ module pong_engine_top #(
         .input_mode(2'b01), // Choose uart for now
         .btn_raw(button), .uart_rx(uart_rx),
         .p1_up(ctrl_p1_up), .p1_down(ctrl_p1_down),
-        .p2_up(ctrl_p2_up), .p2_down(ctrl_p2_down)
+        .p2_up(ctrl_p2_up), .p2_down(ctrl_p2_down),
+        .start_trigger(ctrl_start_trigger)
     );
 
     pong_logic game_state (
@@ -73,6 +76,7 @@ module pong_engine_top #(
         .rst(rst),
         .up_p1(ctrl_p1_up), .down_p1(ctrl_p1_down),
         .up_p2(ctrl_p2_up), .down_p2(ctrl_p2_down),
+        .start_trigger(ctrl_start_trigger),
         .sq_xpos(square_xpos), .sq_ypos(square_ypos),
         .pdl1_xpos(paddle1_xpos), .pdl1_ypos(paddle1_ypos),
         .pdl2_xpos(paddle2_xpos), .pdl2_ypos(paddle2_ypos),
