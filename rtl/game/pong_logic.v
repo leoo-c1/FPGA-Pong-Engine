@@ -94,7 +94,7 @@ module pong_logic (
 
     parameter max_score = 11;               // The max score before game over
 
-    parameter safe_start_time = 2_500_000;
+    parameter safe_start_time = 2_500_000;  // Time to stay on start menu before accepting inputs
     reg [21:0] safe_start_count = 0;
 
     // Helper task to reset game state
