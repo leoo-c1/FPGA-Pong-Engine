@@ -15,7 +15,9 @@ module input_bridge #(
     output reg p1_up,
     output reg p1_down,
     output reg p2_up,
-    output reg p2_down
+    output reg p2_down,
+
+    output reg start_trigger
 );
 
     // Debounce the buttons
@@ -54,7 +56,10 @@ module input_bridge #(
             uart_p1_down <= 0;
             uart_p2_up <= 0;
             uart_p2_down <= 0;
+            start_trigger <= 0;
         end else if (uart_rx_valid) begin
+            start_trigger <= 0;             // Default to zero
+
             case (uart_rx_data)
                 // Player 1
                 8'h57: uart_p1_up   <= 1'b1;    // 'W'
@@ -67,6 +72,9 @@ module input_bridge #(
                 8'h69: uart_p2_up   <= 1'b0;    // 'i'
                 8'h4B: uart_p2_down <= 1'b1;    // 'K'
                 8'h6B: uart_p2_down <= 1'b0;    // 'k'
+
+                // Start trigger
+                8'hAA: start_trigger <= 1'b1;   // Start code
             endcase
         end
     end
