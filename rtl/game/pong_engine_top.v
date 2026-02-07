@@ -5,6 +5,7 @@ module pong_engine_top #(
     input rst,              // Reset button
 
     input wire [BUTTONS-1:0] button,    // Input user buttons
+    input wire uart_rx,                 // UART receive
 
     output h_sync,          // Horizontal sync pulse
     output v_sync,          // Vertical sync pulse
@@ -61,8 +62,8 @@ module pong_engine_top #(
     input_bridge #(.BUTTONS(BUTTONS)) input_manager (
         .clk(clk), 
         .rst(rst),
-        .input_mode(2'b00), // Choose buttons for now
-        .btn_raw(button),
+        .input_mode(2'b01), // Choose uart for now
+        .btn_raw(button), .uart_rx(uart_rx),
         .p1_up(ctrl_p1_up), .p1_down(ctrl_p1_down),
         .p2_up(ctrl_p2_up), .p2_down(ctrl_p2_down)
     );
