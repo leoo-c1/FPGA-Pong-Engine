@@ -81,43 +81,44 @@ module ai_opponent #(
         end
     end
 
-    // Target locking state
-    reg [9:0] current_target_y;
-    reg target_locked = 0;
+    // Target logic
+    reg [9:0] dynamic_target_y;     // Where the AI is currently trying to move to
+    reg offset_dir_locked = 0;      // Whether we have decided the error direction for this volley
+    reg aim_high = 0;               // 0 = Aim Low, 1 = Aim High
 
     always @ (posedge clk_0) begin
         if (!rst) begin
             ai_ypos <= (V_VIDEO / 2) - (PDL_HEIGHT / 2);
             vel_count <= 0;
             reaction_count <= 0;
-            target_locked <= 0;
-            current_target_y <= V_VIDEO/2;
+            offset_dir_locked <= 0;
         end else if (reset_game) begin
             ai_ypos <= (V_VIDEO / 2) - (PDL_HEIGHT / 2);
             vel_count <= 0;
             reaction_count <= 0;
-            target_locked <= 0;
-            current_target_y <= V_VIDEO/2;
+            offset_dir_locked <= 0;
         end else begin
             // Check if the ball has started coming towards the AI
-            if (sq_xveldir == 1'b1) begin
+            if (sq_xveldir == 1'b1 && !sq_missed) begin
                 
-                // Lock in the target coordinate once per volley
-                if (target_locked == 0) begin
-                    // Use random bit to decide if we aim above or below center
-                    if (lfsr_data[5] == 1'b1) begin
-                        // Check bounds to prevent overflow
-                        if (sq_cent_y + difficulty_offset < V_VIDEO)
-                            current_target_y <= sq_cent_y + difficulty_offset;
-                        else
-                            current_target_y <= V_VIDEO - 1;
-                    end else begin
-                        if (sq_cent_y > difficulty_offset)
-                            current_target_y <= sq_cent_y - difficulty_offset;
-                        else
-                            current_target_y <= 0;
-                    end
-                    target_locked <= 1;
+                // Lock in the error direction once per volley
+                if (offset_dir_locked == 0) begin
+                    aim_high <= lfsr_data[5]; // Decide if we overshoot or undershoot
+                    offset_dir_locked <= 1;
+                end
+
+                // Continuously calculate the dynamic target based on live ball position
+                if (aim_high) begin
+                    // Check bounds to prevent overflow
+                    if (sq_cent_y + difficulty_offset < V_VIDEO)
+                        dynamic_target_y <= sq_cent_y + difficulty_offset;
+                    else
+                        dynamic_target_y <= V_VIDEO - 1;
+                end else begin
+                    if (sq_cent_y > difficulty_offset)
+                        dynamic_target_y <= sq_cent_y - difficulty_offset;
+                    else
+                        dynamic_target_y <= 0;
                 end
 
                 // Wait for reaction time before moving
@@ -128,15 +129,15 @@ module ai_opponent #(
                         vel_count <= vel_count + 1;
                     end else begin
                         vel_count <= 0;
-                        // Move paddle towards the locked target (not the ball)
+                        // Move paddle towards the dynamic target
                         // If paddle is below target, move up until it isn't
-                        if (ai_cent_y > current_target_y) begin
+                        if (ai_cent_y > dynamic_target_y) begin
                             // Only move up if AI isn't at the top of the screen
                             if (ai_ypos > 0) begin
                                 ai_ypos <= ai_ypos - 1;
                             end
                         // If paddle is above target, move down until it isn't
-                        end else if (ai_cent_y < current_target_y) begin
+                        end else if (ai_cent_y < dynamic_target_y) begin
                             // Only move down is AI isn't at the bottom of the screen
                             if (ai_ypos < V_VIDEO - PDL_HEIGHT) begin
                                 ai_ypos <= ai_ypos + 1;
@@ -146,7 +147,7 @@ module ai_opponent #(
                 end
             end else if (sq_missed || sq_xveldir == 1'b0) begin
                 reaction_count <= 0;
-                target_locked <= 0; // Unlock for next hit
+                offset_dir_locked <= 0; // Unlock for next hit
                 
                 // Move back towards the centre
                 if (vel_count < PSC_LIMIT) begin
