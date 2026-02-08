@@ -47,8 +47,8 @@ module pong_renderer (
     wire in_startup_text;           // If the current pixel is in the startup text ('PONG...')
     wire in_over_text;              // If the current pixel is in the game over text
 
-    // Startup text
-    startup_text startup_menu (
+    // Startup menu
+    start_menu startup_menu (
         .clk_0(clk_0),
         .rst(rst),
         .pixel_x(pixel_x), .pixel_y(pixel_y),
