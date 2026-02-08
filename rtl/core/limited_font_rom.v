@@ -383,6 +383,32 @@ module limited_font_rom (
                     default: row_bits = 6'b000000;
                 endcase
             end
+            7'd49: begin // '1'
+                case (row)
+                    3'd0: row_bits = 6'b000000;
+                    3'd1: row_bits = 6'b001000;
+                    3'd2: row_bits = 6'b011000;
+                    3'd3: row_bits = 6'b001000;
+                    3'd4: row_bits = 6'b001000;
+                    3'd5: row_bits = 6'b001000;
+                    3'd6: row_bits = 6'b001000;
+                    3'd7: row_bits = 6'b011100;
+                    default: row_bits = 6'b000000;
+                endcase
+            end
+            7'd50: begin // '2'
+                case (row)
+                    3'd0: row_bits = 6'b000000;
+                    3'd1: row_bits = 6'b011100;
+                    3'd2: row_bits = 6'b100010;
+                    3'd3: row_bits = 6'b000010;
+                    3'd4: row_bits = 6'b000100;
+                    3'd5: row_bits = 6'b001000;
+                    3'd6: row_bits = 6'b010000;
+                    3'd7: row_bits = 6'b111110;
+                    default: row_bits = 6'b000000;
+                endcase
+            end
             default: row_bits = 6'b000000;
         endcase
     end
