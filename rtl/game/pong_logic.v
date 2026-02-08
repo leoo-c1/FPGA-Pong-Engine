@@ -8,6 +8,10 @@ module pong_logic #(
     parameter PDL_SPEED = 600,          // Speed of the player's paddle
     parameter AI_SPEED = 500,           // Speed of the AI's paddle
     parameter AI_REACTION_TIME = 700,   // Time (ms) the AI takes to react to the ball coming
+    parameter MIN_OFFSET = 0,           // Minimum error in pixels (Sharpest aim)
+    parameter MAX_OFFSET = 48,          // Maximum error in pixels (Sloppiest aim)
+    parameter BASE_OFFSET = 6,          // Default error when scores are tied
+    parameter SCALING_FACTOR = 3,       // How many pixels the error changes per point difference
 
     // Sprite settings
     parameter SQ_WIDTH = 16,
@@ -63,6 +67,7 @@ module pong_logic #(
         .sq_xpos(sq_xpos), .sq_ypos(sq_ypos),
         .sq_xveldir(sq_xveldir),
         .sq_missed(sq_missed),
+        .score_p1(score_p1), .score_p2(score_p2),
         .x_pos(pdl1_xpos), .y_pos(pdl1_ypos)
     );
 
@@ -71,7 +76,10 @@ module pong_logic #(
         .START_X(603),
         .PDL_HEIGHT(PDL_HEIGHT),
         .AI_SPEED(AI_SPEED),
-        .AI_REACTION_TIME(AI_REACTION_TIME)
+        .AI_REACTION_TIME(AI_REACTION_TIME),
+        .MIN_OFFSET(MIN_OFFSET), .MAX_OFFSET(MAX_OFFSET),
+        .BASE_OFFSET(BASE_OFFSET),
+        .SCALING_FACTOR(SCALING_FACTOR)
         ) p2_move (
         .clk_0(clk_0), .rst(rst),
         .reset_game(game_startup | game_over),
@@ -80,6 +88,7 @@ module pong_logic #(
         .sq_xpos(sq_xpos), .sq_ypos(sq_ypos),
         .sq_xveldir(sq_xveldir),
         .sq_missed(sq_missed),
+        .score_p1(score_p1), .score_p2(score_p2),
         .x_pos(pdl2_xpos), .y_pos(pdl2_ypos)
     );
 
