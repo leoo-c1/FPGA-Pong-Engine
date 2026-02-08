@@ -2,8 +2,9 @@ module paddle_control #(
     parameter V_VIDEO = 480,
     parameter PDL_HEIGHT = 96,
     parameter START_X = 24,
-    parameter SPEED = 600,
-    parameter AI_REACTION_TIME = 500
+    parameter PDL_SPEED = 600,
+    parameter AI_SPEED = 500,
+    parameter AI_REACTION_TIME = 700
 )(
     input clk_0,                // 25.175MHz clock
     input rst,                  // Reset button
@@ -28,16 +29,16 @@ module paddle_control #(
     assign x_pos = START_X;
     
     // Velocity Prescaler
-    localparam PSC_LIMIT = 25_175_000 / SPEED;
+    localparam PSC_LIMIT = 25_175_000 / PDL_SPEED;
     reg [18:0] vel_count = 0;
 
     // AI opponent
-    wire ai_ypos;
+    wire [9:0] ai_ypos;
 
     ai_opponent #(
         .V_VIDEO(V_VIDEO),
         .PDL_HEIGHT(PDL_HEIGHT),
-        .SPEED(SPEED),
+        .SPEED(AI_SPEED),
         .REACTION_TIME(AI_REACTION_TIME)
     ) computer (
         .clk_0(clk_0),
