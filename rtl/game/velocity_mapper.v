@@ -21,7 +21,7 @@ module velocity_mapper #(
     parameter pdl_height = 96;
 
     parameter SCALE_VELX = 2 * (MAX_XVEL - MIN_XVEL) / pdl_height;
-    parameter SCALE_VELY = (2 * MAX_XVEL / pdl_height) * 5 / 6;     // Scale by 5/6 for lower angle
+    parameter SCALE_VELY = 2 * MAX_XVEL / pdl_height;
 
     always @ (posedge clk_0) begin
         if (!rst) begin         // If we reset, set velocities to default velocity
