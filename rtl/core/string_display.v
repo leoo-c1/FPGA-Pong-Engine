@@ -56,8 +56,8 @@ module string_display #(
     wire [2:0] rom_col = char_rel_x / SCALE;
     wire [5:0] row_bits;
 
-    // Instantiate one Font ROM for this entire string
-    font_rom font_unit (
+    // Instantiate the limited font ROM for this entire string
+    limited_font_rom font_unit (
         .char_code(current_char_val[6:0]),
         .row(rom_row),
         .row_bits(row_bits)
