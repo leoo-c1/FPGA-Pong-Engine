@@ -3,7 +3,7 @@ module paddle_control #(
     parameter PDL_HEIGHT = 96,
     parameter START_X = 24,
     parameter SPEED = 600,
-    parameter AI_REACTION_TIME = 0.5
+    parameter AI_REACTION_TIME = 500
 )(
     input clk_0,                // 25.175MHz clock
     input rst,                  // Reset button
@@ -47,7 +47,7 @@ module paddle_control #(
         .sq_missed(sq_missed),
         .reset_game(reset_game),
         .ai_ypos(ai_ypos)
-    )
+    );
 
     always @(posedge clk_0 or negedge rst) begin
         if (!rst) begin
