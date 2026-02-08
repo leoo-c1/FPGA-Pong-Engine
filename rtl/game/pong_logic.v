@@ -1,4 +1,19 @@
-module pong_logic (
+module pong_logic #(
+     // Ball settings
+    parameter INIT_XVEL = 300,  // Used at the start of every new game and round
+    parameter MIN_XVEL = 600,   // Used for paddle centre hits
+    parameter MAX_XVEL = 700,   // Maximum horizontal velocity in pixels/second for edge hits
+
+    // Control settings
+    parameter PDL_SPEED = 600,          // Speed of the player's paddle
+    parameter AI_SPEED = 500,           // Speed of the AI's paddle
+    parameter AI_REACTION_TIME = 700,   // Time (ms) the AI takes to react to the ball coming
+
+    // Sprite settings
+    parameter SQ_WIDTH = 16,
+    parameter PDL_HEIGHT = 96,
+    parameter PDL_WIDTH = 12
+    ) (
     input clk_0,            // 25.175MHz clock
     input rst,              // Reset button
 
@@ -8,6 +23,7 @@ module pong_logic (
     input wire up_p2,       // Player 2 up
     input wire down_p2,     // Player 2 down
 
+    input wire [1:0] mode_choice,   // Gamemode choice, 0 = nothing, 1 = 1 player, 2 = 2 players
     input wire start_trigger,       // For triggering startup when any key is pressed
 
     // Coordinates for the top left corner of each sprite
@@ -33,29 +49,16 @@ module pong_logic (
     parameter h_video = 640;        // Horizontal active video (in pixels)
     parameter v_video = 480;        // Vertical active video (in lines)
 
-    parameter sq_width = 16;        // The side lengths of the square
-    parameter pdl_width = 12;       // The thickness of the paddle
-    parameter pdl_height = 96;      // The height of the paddle
-
-    // Get gamemode choice from start menu
-    wire [1:0] mode_choice;         // Gamemode choice, 0 = nothing, 1 = 1 player, 2 = 2 players   
-    start_menu startup_menu (
-        .clk_0(clk_0),
-        .rst(rst),
-        .pixel_x(pixel_x), .pixel_y(pixel_y),
-        .start_trigger(start_trigger),
-        .mode_choice(mode_choice)
-    );
-
     // Control paddle movement
     // Player 1
     paddle_control #(
-        .START_X(24)
+        .START_X(24),
+        .PDL_SPEED(PDL_SPEED)
         ) p1_move (
         .clk_0(clk_0), .rst(rst),
         .reset_game(game_startup | game_over),
-        .mode_choice(1'b01),    // Forced to be singleplayer, paddle 1 is always player-controlled
-        .move_up(up_p2), .move_down(down_p2),
+        .mode_choice(2'b10),    // Forced to be multiplayer, paddle 1 is always player-controlled
+        .move_up(up_p1), .move_down(down_p1),
         .sq_xpos(sq_xpos), .sq_ypos(sq_ypos),
         .sq_xveldir(sq_xveldir),
         .sq_missed(sq_missed),
@@ -65,7 +68,8 @@ module pong_logic (
     // Player 2, either player-controlled or AI-controlled
     paddle_control #(
         .START_X(603),
-        .AI_REACTION_TIME(500)
+        .AI_SPEED(AI_SPEED),
+        .AI_REACTION_TIME(AI_REACTION_TIME)
         ) p2_move (
         .clk_0(clk_0), .rst(rst),
         .reset_game(game_startup | game_over),
@@ -78,9 +82,6 @@ module pong_logic (
     );
 
     // Square velocity setup
-    parameter INIT_XVEL = 300;  // Used on reset, startup or game over
-    parameter MIN_XVEL = 500;   // Used for reset, square missed, centre hit, startup and game over
-    parameter MAX_XVEL = 600;   // Maximum horizontal velocity in pixels/second for edge hits
     parameter VEL_WIDTH = $clog2(MAX_XVEL + 1);  // Width of velocity register
     wire [VEL_WIDTH-1:0] sq_xvel;
     wire [VEL_WIDTH-1:0] sq_yvel;
@@ -93,9 +94,9 @@ module pong_logic (
     reg sq_yveldir = 1'b0;          // Square's direction of velocity along y, 0 = up, 1 = down
 
     reg paddle_hit = 1'b0;          // Whether or not we just hit a paddle
-    wire [9:0] sq_cent_y = sq_ypos + sq_width/2;        // Center of square
-    wire [9:0] pdl1_cent_y = pdl1_ypos + pdl_height/2;  // Center of Left paddle
-    wire [9:0] pdl2_cent_y = pdl2_ypos + pdl_height/2;  // Center of Right paddle
+    wire [9:0] sq_cent_y = sq_ypos + SQ_WIDTH/2;        // Center of square
+    wire [9:0] pdl1_cent_y = pdl1_ypos + PDL_HEIGHT/2;  // Center of Left paddle
+    wire [9:0] pdl2_cent_y = pdl2_ypos + PDL_HEIGHT/2;  // Center of Right paddle
 
     velocity_mapper #(
         .INIT_XVEL(INIT_XVEL),
@@ -197,7 +198,7 @@ module pong_logic (
             paddle_hit <= 1'b0;         // Default to no hit
 
             // Square collision with right wall
-            if (sq_xpos >= h_video - sq_width - 1) begin    // Respawn ball
+            if (sq_xpos >= h_video - SQ_WIDTH - 1) begin    // Respawn ball
                 spawn_ball();
                 sq_xveldir <= 1'b1;                         // Let P2 start with the ball
                 if (score_p1 < max_score - 1) begin         // Increment score if possible
@@ -217,7 +218,7 @@ module pong_logic (
                     game_over <= 1'b1;
                 end
             
-            end else if (sq_ypos >= v_video - sq_width - 1) begin    // If we hit the bottom wall
+            end else if (sq_ypos >= v_video - SQ_WIDTH - 1) begin    // If we hit the bottom wall
                 sq_yveldir <= ~sq_yveldir;  // Change direction along y-axis
                 sq_ypos <= sq_ypos - 1;     // Move up by one pixel
 
@@ -227,24 +228,24 @@ module pong_logic (
 
             // Square collision with right paddle
             // Check if the left/right side of the square hits
-            end else if (sq_xpos + sq_width >= pdl2_xpos && 
-                        sq_xpos <= pdl2_xpos + pdl_width) begin
+            end else if (sq_xpos + SQ_WIDTH >= pdl2_xpos && 
+                        sq_xpos <= pdl2_xpos + PDL_WIDTH) begin
                 // Check if the top/bottom right corner of the square hits the paddle
-                if (sq_ypos <= pdl2_ypos + pdl_height && 
-                    sq_ypos + sq_width >= pdl2_ypos) begin
+                if (sq_ypos <= pdl2_ypos + PDL_HEIGHT && 
+                    sq_ypos + SQ_WIDTH >= pdl2_ypos) begin
                     // Check if top of the square is hitting the bottom of the paddle
-                    if (sq_ypos == pdl2_ypos + pdl_height ||
-                        sq_ypos == pdl2_ypos + pdl_height - 1) begin
+                    if (sq_ypos == pdl2_ypos + PDL_HEIGHT ||
+                        sq_ypos == pdl2_ypos + PDL_HEIGHT - 1) begin
                         sq_yveldir <= ~sq_yveldir;  // Change direction along y-axis
                         sq_ypos <= sq_ypos + 1;     // Move down one pixel
-                        hit_y <= pdl_height/2;
+                        hit_y <= PDL_HEIGHT/2;
                     
                     // Check if bottom of the square is hitting the top of the paddle
-                    end else if (sq_ypos + sq_width == pdl2_ypos || 
-                                sq_ypos + sq_width == pdl2_ypos + 1) begin
+                    end else if (sq_ypos + SQ_WIDTH == pdl2_ypos || 
+                                sq_ypos + SQ_WIDTH == pdl2_ypos + 1) begin
                         sq_yveldir <= ~sq_yveldir;  // Change direction along y-axis
                         sq_ypos <= sq_ypos - 1;     // Move up by one pixel
-                        hit_y <= pdl_height/2;
+                        hit_y <= PDL_HEIGHT/2;
 
                     end else begin
                         paddle_hit <= 1'b1;
@@ -255,16 +256,16 @@ module pong_logic (
                         if (sq_cent_y >= pdl2_cent_y) begin
                             sq_yveldir <= 1'b1;     // Send the square down
                             // Calculate Distance
-                            if ((sq_cent_y - pdl2_cent_y) > pdl_height/2)
-                                hit_y <= pdl_height/2; // Clamp to max range
+                            if ((sq_cent_y - pdl2_cent_y) > PDL_HEIGHT/2)
+                                hit_y <= PDL_HEIGHT/2; // Clamp to max range
                             else
                                 hit_y <= sq_cent_y - pdl2_cent_y;
 
                         end else begin // If we are at/above the paddle's centre
                             sq_yveldir <= 1'b0;     // Send the square up
                             // Calculate Distance
-                            if ((pdl2_cent_y - sq_cent_y) > pdl_height/2)
-                                hit_y <= pdl_height/2; // Clamp to max range
+                            if ((pdl2_cent_y - sq_cent_y) > PDL_HEIGHT/2)
+                                hit_y <= PDL_HEIGHT/2; // Clamp to max range
                             else
                                 hit_y <= pdl2_cent_y - sq_cent_y;
                         end
@@ -273,24 +274,24 @@ module pong_logic (
 
             // Square collision with left paddle
             // Check if the left/right side of the square hits
-            end else if (sq_xpos <= pdl1_xpos + pdl_width + 1 && 
-                        sq_xpos + sq_width >= pdl1_xpos) begin
+            end else if (sq_xpos <= pdl1_xpos + PDL_WIDTH + 1 && 
+                        sq_xpos + SQ_WIDTH >= pdl1_xpos) begin
                 // If top/bottom left corner of the square is hitting the left paddle's right side
-                if (sq_ypos <= pdl1_ypos + pdl_height && 
-                    sq_ypos + sq_width >= pdl1_ypos) begin
+                if (sq_ypos <= pdl1_ypos + PDL_HEIGHT && 
+                    sq_ypos + SQ_WIDTH >= pdl1_ypos) begin
                     // Check if top of the square is hitting the bottom of the paddle
-                    if (sq_ypos == pdl1_ypos + pdl_height ||
-                        sq_ypos == pdl1_ypos + pdl_height - 1) begin
+                    if (sq_ypos == pdl1_ypos + PDL_HEIGHT ||
+                        sq_ypos == pdl1_ypos + PDL_HEIGHT - 1) begin
                         sq_yveldir <= ~sq_yveldir;  // Change direction along y-axis
                         sq_ypos <= sq_ypos + 1;     // Move down one pixel
-                        hit_y <= pdl_height/2;
+                        hit_y <= PDL_HEIGHT/2;
                     
                     // Check if bottom of the square is hitting the top of the paddle
-                    end else if (sq_ypos + sq_width == pdl1_ypos || 
-                                sq_ypos + sq_width == pdl1_ypos + 1) begin
+                    end else if (sq_ypos + SQ_WIDTH == pdl1_ypos || 
+                                sq_ypos + SQ_WIDTH == pdl1_ypos + 1) begin
                         sq_yveldir <= ~sq_yveldir;  // Change direction along y-axis
                         sq_ypos <= sq_ypos - 1;     // Move up by one pixel
-                        hit_y <= pdl_height/2;
+                        hit_y <= PDL_HEIGHT/2;
 
                     end else begin
                         paddle_hit <= 1'b1;
@@ -301,16 +302,16 @@ module pong_logic (
                         if (sq_cent_y >= pdl1_cent_y) begin
                             sq_yveldir <= 1'b1;     // Send the square down
                             // Calculate distance
-                            if ((sq_cent_y - pdl1_cent_y) > pdl_height/2)
-                                hit_y <= pdl_height/2;
+                            if ((sq_cent_y - pdl1_cent_y) > PDL_HEIGHT/2)
+                                hit_y <= PDL_HEIGHT/2;
                             else
                                 hit_y <= sq_cent_y - pdl1_cent_y;
 
                         end else begin // If we are at/above the paddle's centre
                             sq_yveldir <= 1'b0;     // Send the square up
                             // Calculate distance
-                            if ((pdl1_cent_y - sq_cent_y) > pdl_height/2)
-                                hit_y <= pdl_height/2;
+                            if ((pdl1_cent_y - sq_cent_y) > PDL_HEIGHT/2)
+                                hit_y <= PDL_HEIGHT/2;
                             else
                                 hit_y <= pdl1_cent_y - sq_cent_y;
                         end
