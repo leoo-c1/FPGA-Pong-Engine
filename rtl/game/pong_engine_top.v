@@ -1,10 +1,23 @@
 module pong_engine_top #(
-    parameter BUTTONS = 4   // Number of buttons to debounce
+    // Ball settings
+    parameter SQ_INIT_XVEL = 300, // Used at the start of every new game and round
+    parameter SQ_MIN_XVEL = 600,  // Used for paddle centre hits
+    parameter SQ_MAX_XVEL = 700,  // Maximum horizontal velocity in pixels/second for edge hits
+
+    // Control settings
+    parameter PLAYER_SPEED = 600,       // Speed of the player's paddle
+    parameter AI_SPEED = 500,           // Speed of the AI's paddle
+    parameter AI_REACTION_TIME = 500,   // Time (ms) the AI takes to react to the ball coming
+
+    // Sprite settings
+    parameter SQ_WIDTH = 16,
+    parameter PADDLE_HEIGHT = 96,
+    parameter PADDLE_WIDTH = 12
 ) (
     input clk,              // 50MHz clock
     input rst,              // Reset button
 
-    input wire [BUTTONS-1:0] button,    // Input user buttons
+    input wire [3:0] button,    // Input user buttons
     input wire uart_rx,                 // UART receive
 
     output h_sync,          // Horizontal sync pulse
@@ -50,6 +63,8 @@ module pong_engine_top #(
     wire ctrl_p2_up;
     wire ctrl_p2_down;
 
+    wire in_menu_text; // Pixels for the menu text
+    wire [1:0] current_mode_choice;
     wire ctrl_start_trigger;
 
     vga_sync vga_sync_logic (
@@ -61,7 +76,7 @@ module pong_engine_top #(
     );
 
     // Input bridge
-    input_bridge #(.BUTTONS(BUTTONS)) input_manager (
+    input_bridge input_manager (
         .clk(clk), 
         .rst(rst),
         .input_mode(2'b01), // Choose uart for now
@@ -71,11 +86,34 @@ module pong_engine_top #(
         .start_trigger(ctrl_start_trigger)
     );
 
-    pong_logic game_state (
+    // Start menu
+    start_menu startup_menu (
+        .clk_0(clk_0), .rst(rst),
+        .pixel_x(pixel_x), .pixel_y(pixel_y),
+        .up(ctrl_p1_up), .down(ctrl_p1_down),
+        .start_trigger(ctrl_start_trigger),
+        .in_text(in_menu_text),
+        .mode_choice(current_mode_choice)
+    );
+
+    pong_logic #(
+        .INIT_XVEL(SQ_INIT_XVEL),
+        .MIN_XVEL(SQ_MIN_XVEL),
+        .MAX_XVEL(SQ_MAX_XVEL),
+
+        .PDL_SPEED(PLAYER_SPEED),
+        .AI_SPEED(AI_SPEED),
+        .AI_REACTION_TIME(AI_REACTION_TIME),
+
+        .SQ_WIDTH(SQ_WIDTH),
+        .PDL_HEIGHT(PADDLE_HEIGHT),
+        .PDL_WIDTH(PADDLE_WIDTH)
+    ) game_state (
         .clk_0(clk_0),
         .rst(rst),
         .up_p1(ctrl_p1_up), .down_p1(ctrl_p1_down),
         .up_p2(ctrl_p2_up), .down_p2(ctrl_p2_down),
+        .mode_choice(current_mode_choice),
         .start_trigger(ctrl_start_trigger),
         .sq_xpos(square_xpos), .sq_ypos(square_ypos),
         .pdl1_xpos(paddle1_xpos), .pdl1_ypos(paddle1_ypos),
@@ -86,7 +124,11 @@ module pong_engine_top #(
         .game_startup(game_startup)
     );
 
-    pong_renderer game_scene (
+    pong_renderer #(
+        .SQ_WIDTH(SQ_WIDTH),
+        .PDL_HEIGHT(PADDLE_HEIGHT),
+        .PDL_WIDTH(PADDLE_WIDTH)
+        ) game_scene (
         .clk_0(clk_0),
         .rst(rst),
         .pixel_x(pixel_x), .pixel_y(pixel_y),
@@ -98,6 +140,7 @@ module pong_engine_top #(
         .score_p1(score_p1), .score_p2(score_p2),
         .game_over(game_over),
         .game_startup(game_startup),
+        .in_startup_text(in_menu_text),
         .red(red), .green(green), .blue(blue)
     );
 
