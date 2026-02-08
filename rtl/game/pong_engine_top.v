@@ -1,17 +1,17 @@
 module pong_engine_top #(
     // Ball settings
     parameter SQ_INIT_XVEL = 300, // Used at the start of every new game and round
-    parameter SQ_MIN_XVEL = 600,  // Used for paddle centre hits
-    parameter SQ_MAX_XVEL = 700,  // Maximum horizontal velocity in pixels/second for edge hits
+    parameter SQ_MIN_XVEL = 700,  // Used for paddle centre hits
+    parameter SQ_MAX_XVEL = 800,  // Maximum horizontal velocity in pixels/second for edge hits
 
     // Control settings
-    parameter PLAYER_SPEED = 600,       // Speed of the player's paddle
+    parameter PLAYER_SPEED = 500,       // Speed of the player's paddle
     parameter AI_SPEED = 500,           // Speed of the AI's paddle
-    parameter AI_REACTION_TIME = 500,   // Time (ms) the AI takes to react to the ball coming
+    parameter AI_REACTION_TIME = 400,   // Time (ms) the AI takes to react to the ball coming
 
     // Sprite settings
     parameter SQ_WIDTH = 16,
-    parameter PADDLE_HEIGHT = 96,
+    parameter PADDLE_HEIGHT = 48,
     parameter PADDLE_WIDTH = 12
 ) (
     input clk,              // 50MHz clock
