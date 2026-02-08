@@ -4,7 +4,11 @@ module paddle_control #(
     parameter START_X = 24,
     parameter PDL_SPEED = 600,
     parameter AI_SPEED = 500,
-    parameter AI_REACTION_TIME = 700
+    parameter AI_REACTION_TIME = 700,
+    parameter MIN_OFFSET = 0,       // Minimum error in pixels (Sharpest aim)
+    parameter MAX_OFFSET = 48,      // Maximum error in pixels (Sloppiest aim)
+    parameter BASE_OFFSET = 6,      // Default error when scores are tied
+    parameter SCALING_FACTOR = 3    // How many pixels the error changes per point difference
 )(
     input clk_0,                // 25.175MHz clock
     input rst,                  // Reset button
@@ -23,7 +27,11 @@ module paddle_control #(
     
     // Paddle position
     output [9:0] x_pos,
-    output reg [9:0] y_pos
+    output reg [9:0] y_pos,
+
+    // Game score
+    input wire [3:0] score_p1,      // Player 1's score
+    input wire [3:0] score_p2       // Player 2's score (AI)
 );
 
     assign x_pos = START_X;
@@ -39,7 +47,10 @@ module paddle_control #(
         .V_VIDEO(V_VIDEO),
         .PDL_HEIGHT(PDL_HEIGHT),
         .SPEED(AI_SPEED),
-        .REACTION_TIME(AI_REACTION_TIME)
+        .REACTION_TIME(AI_REACTION_TIME),
+        .MIN_OFFSET(MIN_OFFSET), .MAX_OFFSET(MAX_OFFSET),
+        .BASE_OFFSET(BASE_OFFSET),
+        .SCALING_FACTOR(SCALING_FACTOR)
     ) computer (
         .clk_0(clk_0),
         .rst(rst),
@@ -47,6 +58,7 @@ module paddle_control #(
         .sq_xveldir(sq_xveldir),
         .sq_missed(sq_missed),
         .reset_game(reset_game),
+        .score_p1(score_p1), .score_p2(score_p2),
         .ai_ypos(ai_ypos)
     );
 
