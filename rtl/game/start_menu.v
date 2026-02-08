@@ -24,11 +24,12 @@ module start_menu #(
     input wire [9:0] pixel_x,
     input wire [9:0] pixel_y,
 
-    input wire up,
-    input wire down,
+    input wire up,                  // Selects '1 PLAYER'
+    input wire down,                // Selects '2 PLAYERS'
+    input wire start_trigger,       // If we receive the 'any key' input to lock in mode and start
     
-    output wire in_text,
-    output reg mode_choice
+    output wire in_text,            // Whether or not current pixel is inside a menu string
+    output reg [1:0] mode_choice    // Gamemode choice, 0 = nothing, 1 = 1 player, 2 = 2 players
     );
 
     reg [8:0] choice_y = SP_Y;
@@ -60,13 +61,25 @@ module start_menu #(
 
     always @ (posedge clk_0) begin
         if (!rst) begin             // If the reset button is pressed
-        // Make singleplayer be the default choice
+        // No choice is made, hover over the default singleplayer choice
+        mode_choice <= 2'b00;
         choice_y <= SP_Y;
         end else begin
             if (up)
                 choice_y <= SP_Y;
             else if (down)
                 choice_y <= MP_Y;
+
+            // Lock in the current mode selection when user presses a key to start
+            if (start_trigger) begin
+                if (choice_y == SP_Y)       // If singleplayer is chosen
+                    mode_choice <= 2'b01;
+                else if (choice_y == MP_Y)  // If multiplayer is chosen
+                    mode_choice <= 2'b10;
+                else                        // If somehow neither of these are the option
+                    mode_choice <= 2'b00;   // Don't start the game
+            end
+
         end
     end
 
