@@ -4,8 +4,8 @@ module ai_opponent #(
     parameter SPEED = 600,          // Paddle vertical velocity in pixels/second
     parameter REACTION_TIME = 0.5   // Time the AI takes to react to the ball coming towards it
     )(
-    input clk_0,
-    input rst,
+    input clk_0,                    // 25.175MHz clock
+    input rst,                      // Reset button
 
     input wire [9:0] sq_xpos,       // x-coordinate of the square
     input wire [9:0] sq_ypos,       // y-coordinate of the square
