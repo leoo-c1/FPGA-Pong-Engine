@@ -52,7 +52,7 @@ module pong_logic (
     paddle_control #(
         .START_X(24)
         ) p1_move (
-        .clk(clk_0), .rst(rst),
+        .clk_0(clk_0), .rst(rst),
         .reset_game(game_startup | game_over),
         .mode_choice(1'b01),    // Forced to be singleplayer, paddle 1 is always player-controlled
         .move_up(up_p2), .move_down(down_p2),
@@ -65,9 +65,9 @@ module pong_logic (
     // Player 2, either player-controlled or AI-controlled
     paddle_control #(
         .START_X(603),
-        .AI_REACTION_TIME(0.5)
+        .AI_REACTION_TIME(500)
         ) p2_move (
-        .clk(clk_0), .rst(rst),
+        .clk_0(clk_0), .rst(rst),
         .reset_game(game_startup | game_over),
         .mode_choice(mode_choice),
         .move_up(up_p2), .move_down(down_p2),
@@ -124,7 +124,6 @@ module pong_logic (
             sq_xpos <= h_video / 2;
             sq_xpos <= h_video / 2;
             sq_ypos <= rand_y;
-            sq_ypos_ai <= rand_y;
             sq_xveldir <= 1'b0;
             sq_yveldir <= rand_y[0];
             x_acc <= 0;
