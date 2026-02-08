@@ -37,22 +37,43 @@ module pong_logic (
     parameter pdl_width = 12;       // The thickness of the paddle
     parameter pdl_height = 96;      // The height of the paddle
 
+    // Get gamemode choice from start menu
+    wire [1:0] mode_choice;         // Gamemode choice, 0 = nothing, 1 = 1 player, 2 = 2 players   
+    start_menu startup_menu (
+        .clk_0(clk_0),
+        .rst(rst),
+        .pixel_x(pixel_x), .pixel_y(pixel_y),
+        .start_trigger(start_trigger),
+        .mode_choice(mode_choice)
+    );
+
     // Control paddle movement
+    // Player 1
     paddle_control #(
         .START_X(24)
         ) p1_move (
         .clk(clk_0), .rst(rst),
         .reset_game(game_startup | game_over),
-        .move_up(up_p1), .move_down(down_p1),
+        .mode_choice(1'b01),    // Forced to be singleplayer, paddle 1 is always player-controlled
+        .move_up(up_p2), .move_down(down_p2),
+        .sq_xpos(sq_xpos), .sq_ypos(sq_ypos),
+        .sq_xveldir(sq_xveldir),
+        .sq_missed(sq_missed),
         .x_pos(pdl1_xpos), .y_pos(pdl1_ypos)
     );
 
+    // Player 2, either player-controlled or AI-controlled
     paddle_control #(
-        .START_X(603)
+        .START_X(603),
+        .AI_REACTION_TIME(0.5)
         ) p2_move (
         .clk(clk_0), .rst(rst),
         .reset_game(game_startup | game_over),
+        .mode_choice(mode_choice),
         .move_up(up_p2), .move_down(down_p2),
+        .sq_xpos(sq_xpos), .sq_ypos(sq_ypos),
+        .sq_xveldir(sq_xveldir),
+        .sq_missed(sq_missed),
         .x_pos(pdl2_xpos), .y_pos(pdl2_ypos)
     );
 
@@ -101,7 +122,9 @@ module pong_logic (
     task spawn_ball;
         begin
             sq_xpos <= h_video / 2;
+            sq_xpos <= h_video / 2;
             sq_ypos <= rand_y;
+            sq_ypos_ai <= rand_y;
             sq_xveldir <= 1'b0;
             sq_yveldir <= rand_y[0];
             x_acc <= 0;
