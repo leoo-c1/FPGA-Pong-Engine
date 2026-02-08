@@ -53,7 +53,8 @@ module pong_logic #(
     // Player 1
     paddle_control #(
         .START_X(24),
-        .PDL_SPEED(PDL_SPEED)
+        .PDL_SPEED(PDL_SPEED),
+        .PDL_HEIGHT(PDL_HEIGHT)
         ) p1_move (
         .clk_0(clk_0), .rst(rst),
         .reset_game(game_startup | game_over),
@@ -68,6 +69,7 @@ module pong_logic #(
     // Player 2, either player-controlled or AI-controlled
     paddle_control #(
         .START_X(603),
+        .PDL_HEIGHT(PDL_HEIGHT),
         .AI_SPEED(AI_SPEED),
         .AI_REACTION_TIME(AI_REACTION_TIME)
         ) p2_move (
